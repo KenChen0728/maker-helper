@@ -76,7 +76,9 @@ h1,h2,h3{font-family:var(--f-display);font-weight:700;margin:0;text-wrap:balance
 #app{max-width:1280px;margin:0 auto}
 
 /* ---------- top bar ---------- */
-.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 0;background:linear-gradient(var(--bg) 70%,transparent)}
+.top{position:relative;z-index:20;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 0}
+/* 上方列：手機上會排成兩行，不黏在上面（不蓋到卡片）；畫面夠大才黏住，往下捲時才加不透明底色（橫跨整個畫面）和一條細線 */
+@media (min-width:760px) and (min-height:600px){.top{position:sticky;top:env(safe-area-inset-top,0px)}.scrolled .top{background:var(--bg);box-shadow:0 0 0 100vmax var(--bg),0 1px 0 100vmax var(--line);clip-path:inset(0 -100vmax -1px)}}
 .brand{display:flex;align-items:center;gap:10px;min-width:0;margin-right:auto;text-decoration:none;color:inherit;background:none;border:0;padding:0;text-align:left}
 .brand svg{flex:none}
 .brand b{font-family:var(--f-display);font-size:1.25rem;font-weight:700;white-space:nowrap}
@@ -106,7 +108,8 @@ h1,h2,h3{font-family:var(--f-display);font-weight:700;margin:0;text-wrap:balance
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .card{position:relative;display:flex;flex-direction:column;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:8px 8px 10px;min-width:0;color:var(--ink);transition:border-color .15s,transform .15s}
 .card:hover{border-color:var(--accent-line);transform:translateY(-1px)}
-.card canvas{width:100%;aspect-ratio:16/11;max-width:100%;border-radius:8px;background:var(--surface-2);display:block}
+.card canvas,.card .ph{width:100%;height:auto;aspect-ratio:16/11;max-width:100%;border-radius:8px;background:var(--surface-2);display:block}
+.card .ph{object-fit:contain}
 .card b{font-family:var(--f-display);font-size:1.02rem;margin-top:8px;line-height:1.3}
 .card span.d{font-size:.8rem;color:var(--muted);line-height:1.4;margin-top:2px}
 .card .meta{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
@@ -341,7 +344,7 @@ textarea#textIn{font-size:1.4rem;min-height:84px;resize:vertical}
 <noscript><p style="padding:24px">這個網站需要開啟 JavaScript。</p></noscript>
 <script>
 "use strict";
-const APP_VERSION = "0.5.0";
+const APP_VERSION = "0.5.1";
 /* ===== raster: rectangular mm grids, masks, distance transforms, tracing ===== */
 /* Grid G: nx×ny cells, ppm cells per mm, W×H mm, origin at centre, y grows downward. */
 const R = (() => {
@@ -2601,6 +2604,7 @@ const Viewer = (() => {
   function mul(a, b) { const o = new Array(16); for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { let s = 0; for (let k = 0; k < 4; k++) s += a[k * 4 + j] * b[i * 4 + k]; o[i * 4 + j] = s; } return o; }
   /* backwards-compatible: static meshes with dx,dy offsets */
   function set(meshes, colors) { setScene(meshes.map(m => ({ tris: m.tris, tones: m.tones, flat: { pos: [m.dx || 0, -(m.dy || 0), 0], q: Q.id() } })), colors, { t: 1 }); }
+  /* 固定角度（做作品卡片的成品圖用）：不自動旋轉 */
   return { mount, set, setScene, setT, play, req, reset, ok: () => ok, t: () => T };
 })();
 
@@ -3472,9 +3476,17 @@ function go(id) {
 const root = () => document.getElementById("app");
 function render() { if (APP.card) renderMaker(); else if (APP.page) PAGES[APP.page](); else renderHome(); }
 
-function cardEl(c, big) {
+function thumbCanvas(c) {
   const cv = h("canvas", { width: 320, height: 220, "aria-hidden": "true" });
   try { CARDS.thumb(c, cv); } catch (e) {}
+  return cv;
+}
+function cardEl(c, big) {
+  let cv;
+  if (c.work) {  // 作品：真正的成品圖；圖片讀不到（例如沒有網路）就改用畫的
+    cv = h("img", { class: "ph", src: "works/" + c.id + ".webp", alt: "", width: 640, height: 440, loading: "lazy", decoding: "async" });
+    cv.onerror = () => { cv.onerror = null; cv.replaceWith(thumbCanvas(c)); };
+  } else cv = thumbCanvas(c);
   const pinned = APP.pins.includes(c.id);
   const el = h("button", { class: "card", onclick: e => { if (e.target.closest(".pin")) return; go(c.id); } }, cv,
     h("span", { class: c.m === "3d" ? "tag3d" : "taglaser" }, c.m === "3d" ? "3D 列印" : "雷切"),
@@ -4208,6 +4220,9 @@ setTimeout(() => {
 }, 300);
 setTimeout(checkUpdate, 3000); setInterval(checkUpdate, 30 * 60000);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkUpdate(); });
+/* 上方列黏住時，往下捲才加細線 */
+const onScroll = () => document.body.classList.toggle("scrolled", window.scrollY > 4);
+window.addEventListener("scroll", onScroll, { passive: true }); onScroll();
 
 </script>
 </body>
