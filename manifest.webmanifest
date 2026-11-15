@@ -1,7 +1,7 @@
 {
   "name": "創客小幫手",
   "short_name": "創客小幫手",
-  "description": "拍照或選照片，自動轉成雷射雕刻檔（SVG）或 3D 列印的透光片（STL）。照片不會上傳。",
+  "description": "手繪、打字、貼紙或照片，自動變成 3D 列印（STL）和雷射切割（SVG）的檔案。照片不會上傳。",
   "lang": "zh-Hant-TW",
   "id": "./",
   "start_url": "./",
