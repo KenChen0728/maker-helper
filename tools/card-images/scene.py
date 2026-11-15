@@ -6,7 +6,7 @@ from scipy.ndimage import gaussian_filter
 def hexc(h): h = h.lstrip('#'); return np.array([int(h[i:i+2], 16) / 255 for i in (0, 2, 4)])
 def norm(v): return v / np.linalg.norm(v, axis=-1, keepdims=True).clip(1e-9)
 COL = {"base": "#f4f0e8", "top": "#e07a36", "wood": "#e6c893", "burn": "#4a2a12", "metal": "#c3c7cc", "stick": "#d8bb88",
-       "paper": "#fbf8f1", "ink": "#b8423a", "clay": "#d08f6d"}
+       "paper": "#fbf8f1", "ink": "#b8423a", "clay": "#d08f6d", "rubber": "#2e2c2a"}
 WOODISH = {"wood", "engr"}
 PLA = {"base", "top", "clay"}
 
@@ -63,7 +63,7 @@ def part_axes(tris, part):
     return nb
 
 def render_scene(tris, cols, tones, part=None, ground="kraft", az=math.pi - .5, el=.75, W=960, H=660, SS=2, fov=24,
-                 fillw=.74, fillh=.70, warm=True, engr=None, glow=None, out=None, center_y=.50, local=None):
+                 fillw=.74, fillh=.70, warm=True, engr=None, glow=None, out=None, center_y=.50, local=None, decals=None, tri_decal=None, shadow_tris=None, layer_axis=None):
     w, h = W * SS, H * SS
     if part is None: part = np.zeros(len(tris), int)
     lo, hi = tris.reshape(-1, 3).min(0), tris.reshape(-1, 3).max(0); zmin = lo[2]
@@ -89,7 +89,9 @@ def render_scene(tris, cols, tones, part=None, ground="kraft", az=math.pi - .5, 
     V = proj(tris, eye, xc, yc, zc)
     n = norm(np.cross(tris[:, 1] - tris[:, 0], tris[:, 2] - tris[:, 0]))
     view = norm(eye - tris.mean(1)); flip = (n * view).sum(-1) < 0; n[flip] *= -1
-    nb = part_axes(tris, part); nd = np.abs((n * nb).sum(-1))
+    nb = part_axes(tris, part)
+    if layer_axis is not None: nb[:] = np.asarray(layer_axis, float)   # 3D 列印：層紋跟著列印方向
+    nd = np.abs((n * nb).sum(-1))
     # 燈光：左前上方的主光（暖）、右邊的補光（冷）、環境光
     L1 = norm(np.array([-.45, -.55, .9])); L2 = norm(np.array([.75, -.15, .35]))
     c1 = np.array([1.0, .93, .82]) if warm else np.ones(3); c2 = np.array([.80, .87, 1.0]) if warm else np.ones(3)
@@ -112,7 +114,13 @@ def render_scene(tris, cols, tones, part=None, ground="kraft", az=math.pi - .5, 
         l1 = ((b[1] - c[1]) * (X - c[0]) + (c[0] - b[0]) * (Y - c[1])) / den; l2 = ((c[1] - a[1]) * (X - c[0]) + (a[0] - c[0]) * (Y - c[1])) / den; l3 = 1 - l1 - l2
         m = (l1 >= -1e-6) & (l2 >= -1e-6) & (l3 >= -1e-6)
         if not m.any(): continue
-        z = l1 * a[2] + l2 * b[2] + l3 * c[2]; sub = zb[y0:y1 + 1, x0:x1 + 1]; m &= z < sub
+        z = l1 * a[2] + l2 * b[2] + l3 * c[2]; sub = zb[y0:y1 + 1, x0:x1 + 1]
+        dc = decals[tri_decal[i]] if (tri_decal is not None and tri_decal[i] >= 0) else None
+        if dc is not None:   # 板子的正反面：用平面圖決定哪裡是板子、哪裡是孔
+            Pc = l1[m, None] * tris[i, 0] + l2[m, None] * tris[i, 1] + l3[m, None] * tris[i, 2]; q = Pc - dc["o"]
+            ui = np.clip((q @ dc["ex"] / dc["res"]).astype(int), 0, dc["inside"].shape[1] - 1); vi = np.clip((q @ dc["ey"] / dc["res"]).astype(int), 0, dc["inside"].shape[0] - 1)
+            keep = dc["inside"][vi, ui]; idx = np.flatnonzero(m); m = np.zeros_like(m); m.flat[idx[keep]] = True
+        m &= z < sub
         if not m.any(): continue
         P = l1[m, None] * tris[i, 0] + l2[m, None] * tris[i, 1] + l3[m, None] * tris[i, 2]; N = len(P)
         t = tones[i]; base = cols[i].copy(); spk, spp = .10, 24
@@ -127,6 +135,11 @@ def render_scene(tris, cols, tones, part=None, ground="kraft", az=math.pi - .5, 
                 g = .045 * np.sin(U * .30 + 1.8 * np.sin(Vv * .05) + 3 * vnoise(U / 9, Vv / 30, 2.0)) + .02 * (vnoise(U / .6, Vv / 6, 3.0) - .5)
                 col *= (1 + g)[:, None]
                 if t == "burn": col = np.broadcast_to(hexc("#4a2a12"), (N, 3)) * (1 + .5 * g + .08 * (vnoise(U / .25, Vv / .25, 9.0) - .5))[:, None]; spk = .02
+                if dc is not None and dc.get("eng") is not None and (n[i] @ dc["n"]) > .5:   # 雕刻：燒成深褐色
+                    q = P - dc["o"]; ui = np.clip((q @ dc["ex"] / dc["res"]).astype(int), 0, dc["eng"].shape[1] - 1); vi = np.clip((q @ dc["ey"] / dc["res"]).astype(int), 0, dc["eng"].shape[0] - 1)
+                    bn = dc["eng"][vi, ui]; col[bn] = hexc("#4a2a12") * (1 + .5 * g[bn, None])
+                    if dc.get("score") is not None:
+                        sc_ = dc["score"][vi, ui]; col[sc_] = hexc("#6b4223") * (1 + .3 * g[sc_, None])
                 if t == "engr" and engr is not None:
                     E, mm, (hx, hy, hr) = engr; iw, ih = E.shape[1], E.shape[0]; Q = local(P) if local else P
                     uu = np.clip(((Q[:, 0] + mm / 2) / mm * iw).astype(int), 0, iw - 1); vv = np.clip(((mm / 2 - Q[:, 1]) / mm * ih).astype(int), 0, ih - 1)
@@ -170,8 +183,9 @@ def render_scene(tris, cols, tones, part=None, ground="kraft", az=math.pi - .5, 
     gcol[gm] = GROUNDS[ground](G[gm][:, 0], G[gm][:, 1], pf[gm])
     up = np.array([[0, 0, 1.0]]); gsh, _ = light(up, up, 0, 1); gcol *= gsh[0]
     # 陰影：主光投影（柔）＋正下方的接觸陰影（緊）
+    ST = tris if shadow_tris is None else shadow_tris
     def shadow_mask(Ld, blur):
-        Pt = tris.reshape(-1, 3).copy(); tt = (Pt[:, 2] - zmin) / Ld[2]; Pt = Pt - Ld * tt[:, None]; Pt[:, 2] = zmin
+        Pt = ST.reshape(-1, 3).copy(); tt = (Pt[:, 2] - zmin) / Ld[2]; Pt = Pt - Ld * tt[:, None]; Pt[:, 2] = zmin
         S2 = proj(Pt.reshape(-1, 3, 3), eye, xc, yc, zc); im = Image.new("L", (w, h), 0); dr = ImageDraw.Draw(im)
         for tri in S2: dr.polygon([(float(p[0]), float(p[1])) for p in tri], fill=255)
         return np.asarray(im.filter(ImageFilter.GaussianBlur(blur))) / 255
