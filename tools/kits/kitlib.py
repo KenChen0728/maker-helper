@@ -144,3 +144,74 @@ class Sheet:
         for l in self.score: dr.line([tuple(q * k) for q in l], fill=(40, 70, 200), width=max(1, k // 3))
         for l in self.cut: dr.line([tuple(q * k) for q in np.vstack([l, l[:1]])], fill=(220, 30, 30), width=max(1, k // 3))
         im.save(path); return path
+
+# ---------- 角色造型：用畫的（圓、多邊形、粗線）組起來，再描出外框 ----------
+def cross2(a, b):
+    a = np.asarray(a); b = np.asarray(b); return a[..., 0] * b[..., 1] - a[..., 1] * b[..., 0]
+
+def area(P):
+    P = np.asarray(P); return cross2(P, np.roll(P, -1, 0)).sum() / 2
+
+def rdp(P, eps=.04):
+    """Douglas–Peucker 簡化折線（封閉）。"""
+    P = np.asarray(P, float)
+    if len(P) < 5: return P
+    def _r(a, b):
+        if b <= a + 1: return [a]
+        seg = P[b] - P[a]; L = np.hypot(*seg) or 1e-9
+        d = np.abs(cross2(seg, P[a + 1:b] - P[a])) / L; k = int(np.argmax(d))
+        if d[k] > eps: m = a + 1 + k; return _r(a, m) + _r(m, b)
+        return [a]
+    i0 = 0; i1 = int(np.argmax(np.hypot(*(P - P[0]).T)))
+    idx = _r(i0, i1) + _r(i1, len(P) - 1) + [len(P) - 1]
+    return P[sorted(set(idx))]
+
+class Drawing:
+    """在 res mm/格 的畫布上畫形狀（座標 mm，y 往下），最後描出外框和孔。"""
+    def __init__(self, x0, y0, x1, y1, res=.04):
+        self.x0, self.y0, self.res = x0, y0, res
+        self.W, self.H = int((x1 - x0) / res) + 4, int((y1 - y0) / res) + 4
+        self.im = Image.new("L", (self.W, self.H), 0); self.dr = ImageDraw.Draw(self.im)
+    def _p(self, x, y): return ((x - self.x0) / self.res + 2, (y - self.y0) / self.res + 2)
+    def poly(self, pts, fill=255): self.dr.polygon([self._p(*p) for p in pts], fill=fill)
+    def ellipse(self, cx, cy, rx, ry, fill=255): self.dr.ellipse([self._p(cx - rx, cy - ry), self._p(cx + rx, cy + ry)], fill=fill)
+    def line(self, pts, w, fill=255):
+        q = [self._p(*p) for p in pts]; wpx = max(1, int(w / self.res))
+        self.dr.line(q, fill=fill, width=wpx, joint="curve")
+        for p in q: self.dr.ellipse([p[0] - wpx / 2, p[1] - wpx / 2, p[0] + wpx / 2, p[1] + wpx / 2], fill=fill)
+    def rect(self, x, y, w, h, fill=255): self.poly([(x, y), (x + w, y), (x + w, y + h), (x, y + h)], fill)
+    def loops(self, eps=.03):
+        from skimage.measure import find_contours
+        A = np.asarray(self.im, float) / 255
+        cs = find_contours(np.pad(A, 1), .5)
+        out = []
+        for c in cs:
+            P = np.stack([(c[:, 1] - 3) * self.res + self.x0, (c[:, 0] - 3) * self.res + self.y0], 1)
+            if len(P) > 8 and abs(area(P[:-1])) > .5: out.append(rdp(P[:-1], eps))
+        out.sort(key=lambda P: -abs(area(P)))
+        return out   # 第一個是外框，其他是孔
+
+def plus_hole(cx, cy, aw, at, rot=0):
+    """十字孔（套在十字軸上的輪轂）：兩條 aw×at 的長方形交叉。"""
+    a, t = aw / 2, at / 2
+    P = np.array([(t, a), (-t, a), (-t, t), (-a, t), (-a, -t), (-t, -t), (-t, -a), (t, -a), (t, -t), (a, -t), (a, t), (t, t)], float)
+    return rot_pts(P, rot) + [cx, cy]
+
+def rot_pts(P, deg):
+    a = math.radians(deg); c, s = math.cos(a), math.sin(a); return np.stack([P[:, 0] * c - P[:, 1] * s, P[:, 0] * s + P[:, 1] * c], 1)
+
+def pack(items, W=290, H=200, gap=3, margin=4):
+    """items：[(name, outer, holes, eng, score), ...]（各自的座標）。架子式排版，放不下就換下一張。回傳 [[(item, dx, dy), ...], ...]"""
+    boxes = []
+    for it in items:
+        o = it[1]; lo, hi = o.min(0), o.max(0); boxes.append((it, lo, hi - lo))
+    boxes.sort(key=lambda b: -b[2][1])
+    sheets = []; cur = []; x = y = margin; rowh = 0
+    for it, lo, sz in boxes:
+        if x + sz[0] > W - margin:
+            x = margin; y += rowh + gap; rowh = 0
+        if y + sz[1] > H - margin:
+            sheets.append(cur); cur = []; x = y = margin; rowh = 0
+        cur.append((it, x - lo[0], y - lo[1])); x += sz[0] + gap; rowh = max(rowh, sz[1])
+    if cur: sheets.append(cur)
+    return sheets

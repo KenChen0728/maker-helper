@@ -100,7 +100,32 @@ def joint_board(t):
         sh.part(f"楔子{i+1}", wl, (), text("楔", 2.4, 14, 5.3), dx=6 + i * 26, dy=y2)
     return sh
 
+# ---------------- 十字軸測試板 ----------------
+def cross_axle_test(t=3.0, aw=10.0):
+    """十字軸（兩片 aw 寬的木條十字插接）：試軸承孔要多大才轉得順、十字孔要多緊才卡得住。"""
+    sh = Sheet(300, 210, f"十字軸測試板 {t:g} mm")
+    base_d = math.hypot(aw, t)
+    bear = [.2, .4, .6, .8, 1.0]; fits = [-.1, -.2, -.3, -.4, -.5]
+    W = len(bear) * 20 + 8; H = 30
+    holes = []; eng = []
+    for i, c in enumerate(bear):
+        cx = 4 + 10 + i * 20; holes.append(circle(cx, 13, (base_d + c) / 2)); eng += text(f"+{c:.1f}".replace("0.", "."), 2.6, cx, 27.0)
+    eng += text("軸承孔：轉得順", 2.4, W - 4, 4.2, anchor="end", bold=False)
+    sh.part("軸承孔", rrect(0, 0, W, H, 2), holes, eng, dx=4, dy=4)
+    holes = []; eng = []
+    for i, f in enumerate(fits):
+        cx = 4 + 10 + i * 20; holes.append(plus_hole(cx, 13, aw + f, t + .3)); eng += text(("0" if f == 0 else f"{f:.1f}").replace("0.", "."), 2.6, cx, 27.0)
+    eng += text("十字孔：卡得住", 2.4, W - 4, 4.2, anchor="end", bold=False)
+    sh.part("十字孔", rrect(0, 0, W, H, 2), holes, eng, dx=4, dy=4 + H + 4)
+    L = 70.0; mid = L / 2; hw = (t + .2) / 2
+    A = np.array([(0, 0), (L, 0), (L, aw), (0, aw), (0, aw / 2 + hw), (mid + .5, aw / 2 + hw), (mid + .5, aw / 2 - hw), (0, aw / 2 - hw)])
+    B = np.array([(0, 0), (L, 0), (L, aw / 2 - hw), (mid - .5, aw / 2 - hw), (mid - .5, aw / 2 + hw), (L, aw / 2 + hw), (L, aw), (0, aw)])
+    sh.part("十字軸A", A, (), text("A", 3, L - 5, 4.3), dx=4, dy=4 + 2 * (H + 4))
+    sh.part("十字軸B", B, (), text("B", 3, 5, 4.3), dx=4, dy=4 + 2 * (H + 4) + aw + 3)
+    return sh
+
 if __name__ == "__main__":
+    ca = cross_axle_test().fit(); ca.save(f"{OUT}/十字軸測試板_3mm.svg"); ca.preview(f"{OUT}/十字軸測試板_預覽.png", 5)
     ar = axle_ruler().fit(); ar.save(f"{OUT}/軸孔測試尺.svg"); ar.preview(f"{OUT}/軸孔測試尺_預覽.png", 6)
     for t in (3, 5):
         jb = joint_board(t).fit(); jb.save(f"{OUT}/接頭測試板_{t}mm.svg"); jb.preview(f"{OUT}/接頭測試板_{t}mm_預覽.png", 4)

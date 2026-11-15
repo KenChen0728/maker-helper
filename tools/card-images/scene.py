@@ -8,6 +8,7 @@ def norm(v): return v / np.linalg.norm(v, axis=-1, keepdims=True).clip(1e-9)
 COL = {"base": "#f4f0e8", "top": "#e07a36", "wood": "#e6c893", "burn": "#4a2a12", "metal": "#c3c7cc", "stick": "#d8bb88",
        "paper": "#fbf8f1", "ink": "#b8423a", "clay": "#d08f6d", "rubber": "#2e2c2a"}
 WOODISH = {"wood", "engr"}
+LAST_CAM = None
 PLA = {"base", "top", "clay"}
 
 # ---------- 雜訊 ----------
@@ -63,7 +64,7 @@ def part_axes(tris, part):
     return nb
 
 def render_scene(tris, cols, tones, part=None, ground="kraft", az=math.pi - .5, el=.75, W=960, H=660, SS=2, fov=24,
-                 fillw=.74, fillh=.70, warm=True, engr=None, glow=None, out=None, center_y=.50, local=None, decals=None, tri_decal=None, shadow_tris=None, layer_axis=None):
+                 fillw=.74, fillh=.70, warm=True, engr=None, glow=None, out=None, center_y=.50, local=None, decals=None, tri_decal=None, shadow_tris=None, layer_axis=None, cam_fix=None):
     w, h = W * SS, H * SS
     if part is None: part = np.zeros(len(tris), int)
     lo, hi = tris.reshape(-1, 3).min(0), tris.reshape(-1, 3).max(0); zmin = lo[2]
@@ -76,8 +77,9 @@ def render_scene(tris, cols, tones, part=None, ground="kraft", az=math.pi - .5, 
     def proj(P, eye, xc, yc, zc):
         d = P - eye; x = d @ xc; y = d @ yc; z = d @ zc
         s = f / (-z); return np.stack([w / 2 + x * s * (h / 2), h / 2 - y * s * (h / 2), -z], -1)
-    # 讓作品在畫面裡的大小、位置一致（迭代幾次）
-    for _ in range(4):
+    # 讓作品在畫面裡的大小、位置一致（迭代幾次）；動畫時用第一張的相機（cam_fix）
+    global LAST_CAM
+    for _ in range(0 if cam_fix else 4):
         eye, xc, yc, zc = cam(tgt, dist); V = proj(tris.reshape(-1, 3), eye, xc, yc, zc)
         bx0, by0 = V[:, 0].min(), V[:, 1].min(); bx1, by1 = V[:, 0].max(), V[:, 1].max()
         k = max((bx1 - bx0) / (fillw * w), (by1 - by0) / (fillh * h)); dist *= k ** .9
@@ -85,6 +87,8 @@ def render_scene(tris, cols, tones, part=None, ground="kraft", az=math.pi - .5, 
         cx, cy = (V[:, 0].min() + V[:, 0].max()) / 2, (V[:, 1].min() + V[:, 1].max()) / 2
         depth = np.median(V[:, 2]); px = depth / (f * h / 2)
         tgt = tgt + xc * (cx - w / 2) * px - yc * (cy - h * center_y) * px
+    if cam_fix: tgt, dist = np.asarray(cam_fix[0]), cam_fix[1]
+    LAST_CAM = (tgt.copy(), dist)
     eye, xc, yc, zc = cam(tgt, dist)
     V = proj(tris, eye, xc, yc, zc)
     n = norm(np.cross(tris[:, 1] - tris[:, 0], tris[:, 2] - tris[:, 0]))
