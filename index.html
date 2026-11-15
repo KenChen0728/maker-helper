@@ -321,6 +321,11 @@ body[data-step="2"] .main{padding-bottom:12px}
 .cam-foot .msg.bad{color:#ffb08a}
 .shutter{min-width:200px}
 
+/* 新版本提示：放在步驟列上面；調整畫面不顯示 */
+.update-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin-top:10px;padding:10px 14px;border:2px solid var(--accent-line);border-radius:12px;background:var(--accent-soft);color:var(--ink);font-weight:700}
+.update-bar .row{display:flex;gap:8px;flex-wrap:wrap}
+body[data-step="2"] .update-bar{display:none}
+
 </style>
 </head>
 <body>
@@ -331,7 +336,7 @@ body[data-step="2"] .main{padding-bottom:12px}
 /* ===== 創客小幫手（照片）：拍照或選照片 → 裁成形狀 → 雷射雕刻的點陣（SVG）或 3D 列印的透光片（STL） =====
    照片只在這台電腦處理，不上傳、不存檔；記住的只有形狀、大小這些選項。 */
 (() => {
-  const VERSION = "0.4.1";
+  const VERSION = "0.4.2";
 
   /* ---------- 小工具 ---------- */
   function h(tag, attrs, ...kids) {
@@ -1274,6 +1279,7 @@ body[data-step="2"] .main{padding-bottom:12px}
     if (sheet) closeSheet();
     step = n; document.body.dataset.step = String(n);
     s1.hidden = n !== 1; s2.hidden = n !== 2; s3.hidden = n !== 3;
+    if (latest) showUpdate();
     drawSteps(); scrollTo(0, 0);
     if (n === 2) requestAnimationFrame(() => { layoutEditor(); schedule(false); });
     if (n === 3) refreshSummary();
@@ -1283,7 +1289,40 @@ body[data-step="2"] .main{padding-bottom:12px}
     return h("footer", { class: "foot" },
       h("span", null, "照片僅在本機處理，不會上傳或儲存。"),
       h("span", null, `v${VERSION} 試用版・© 2026 Ken Chen・問題回報：LINE 聯絡陳老師`),
-      h("div", null, h("button", { type: "button", class: "chip", onclick: () => { themeSet(dark ? "light" : "dark"); applyTheme(); footSlot.replaceChildren(foot()); schedule(false); } }, dark ? "切換為大地色" : "切換為深色")));
+      h("div", { class: "row" },
+        latest ? h("button", { type: "button", class: "chip", onclick: doUpdate }, `有新版本 v${latest}・重新整理`) : null,
+        h("button", { type: "button", class: "chip", onclick: () => { themeSet(dark ? "light" : "dark"); applyTheme(); footSlot.replaceChildren(foot()); schedule(false); } }, dark ? "切換為大地色" : "切換為深色")));
+  }
+
+  /* ---------- 新版本提示：開啟時、回到畫面時、每 30 分鐘看一次網站上的 version.json ----------
+     有新版就在畫面上方提示（調整中不出現，免得打斷）；按「稍後」這次就不再出現，頁尾仍有更新按鈕。 */
+  const newer = (a, b) => { const x = a.split(".").map(Number), y = b.split(".").map(Number); for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); return false; };
+  let latest = null, lastCheck = 0;
+  const updBar = h("div", { class: "update-bar", role: "status", hidden: true });
+  async function checkUpdate() {
+    if (Date.now() - lastCheck < 60000) return;
+    lastCheck = Date.now();
+    try {
+      const r = await fetch("version.json?t=" + Date.now(), { cache: "no-store" });
+      if (!r.ok) return;
+      const v = (await r.json()).version;
+      if (typeof v === "string" && /^\d+\.\d+\.\d+$/.test(v) && newer(v, VERSION) && v !== latest) { latest = v; showUpdate(); footSlot.replaceChildren(foot()); }
+    } catch (e) { /* 離線或讀不到：不提示 */ }
+  }
+  function showUpdate() {
+    if (!latest) return;
+    let later = ""; try { later = sessionStorage.getItem("maker:update-later") || ""; } catch (e) { later = ""; }
+    if (later === latest) { updBar.hidden = true; return; }
+    updBar.replaceChildren(
+      h("span", null, `有新版本 v${latest}，重新整理即可更新。${IMG ? "目前的照片需要重新選擇。" : ""}`),
+      h("div", { class: "row" },
+        h("button", { type: "button", class: "btn", onclick: doUpdate }, "重新整理"),
+        h("button", { type: "button", class: "btn", onclick: () => { try { sessionStorage.setItem("maker:update-later", latest); } catch (e) { /* 存不了就只收起來 */ } updBar.hidden = true; } }, "稍後")));
+    updBar.hidden = false;
+  }
+  async function doUpdate() {
+    try { await fetch(location.href, { cache: "reload" }); } catch (e) { /* 離線：直接重新整理 */ }
+    location.reload();
   }
 
   /* ---------- 拍攝照片 ---------- */
@@ -1356,10 +1395,12 @@ body[data-step="2"] .main{padding-bottom:12px}
     h("header", { class: "top" }, h("div", { class: "top-in" },
       h("div", { class: "brand" }, svgEl(LOGO), h("span", null, brandName, brandSub)),
       h("button", { type: "button", class: "hbtn", onclick: () => openSheet("help") }, "使用說明"))),
-    h("main", { class: "main" }, stepNav, stepHint, s1, s2, s3));
+    h("main", { class: "main" }, updBar, stepNav, stepHint, s1, s2, s3));
   document.body.append(scrim, sheetEl);
   footSlot.replaceChildren(foot());
   applyOut(); toolbarRedraw(); drawSteps(); go(1);
+  setTimeout(checkUpdate, 3000); setInterval(checkUpdate, 30 * 60000);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkUpdate(); });
   window.PHOTO = { O, geom, compute: G => compute(G || geom(), O.dpi), buildSVG: () => { const G = geom(); return buildSVG(G, exportCanvas(G).toDataURL("image/png")); }, testCard, VERSION, crop, openSheet, closeSheet, setOut,
     meshStats: () => meshStats(meshNow()), stl: () => stlBuffer(meshNow()) };
 })();
