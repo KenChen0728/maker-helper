@@ -215,3 +215,11 @@ def pack(items, W=290, H=200, gap=3, margin=4):
         cur.append((it, x - lo[0], y - lo[1])); x += sz[0] + gap; rowh = max(rowh, sz[1])
     if cur: sheets.append(cur)
     return sheets
+
+def place(sh, name, part, x, y, rot=0):
+    """把零件（外框、孔、雕刻、線刻）轉 rot 度，外框左上角放到 (x, y)。回傳外框的寬高。"""
+    o, hs, e, sc = part
+    R = (lambda P: rot_pts(np.asarray(P, float), rot)) if rot else (lambda P: np.asarray(P, float))
+    o2 = R(o); lo = o2.min(0)
+    sh.part(name, o2, [R(h) for h in hs], [R(q) for q in e], [R(q) for q in sc], dx=x - lo[0], dy=y - lo[1])
+    return o2.max(0) - lo
