@@ -1,0 +1,1369 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>創客小幫手</title>
+<meta name="description" content="創客小幫手：拍照或選照片，自動轉成雷射雕刻檔（SVG）或 3D 列印的透光片（STL）。照片不會上傳。">
+<meta name="theme-color" content="#16324a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="創客小幫手">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/icon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="創客小幫手">
+<meta property="og:title" content="創客小幫手：照片變成雷雕作品，或開燈才看得到的透光片">
+<meta property="og:description" content="拍照或選照片，自動產生雷射雕刻或 3D 列印的檔案。照片不會上傳。">
+<meta property="og:url" content="https://kenchen0728.github.io/maker-helper/">
+<meta property="og:image" content="https://kenchen0728.github.io/maker-helper/icons/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* 課程工具箱：和黑鮪魚名牌網頁同一套（2026-11-15 比較頁選 A）——深藍版頭、牛皮紙格子底、選到的是藍色、按鈕粗框、用裝置內建的字。
+   課程清單用大圖示卡片（選 A）；每堂課的段落可以收合（選 B）。 */
+:root{
+  color-scheme:dark;
+  --bg:#171b16; --grid:rgba(214,226,190,.045); --panel:#1f241d; --surface:#262c24; --surface-2:#2f362c; --line:#3b4337; --line-2:#5a6653;
+  --ink:#ece7da; --muted:#bcbea9;
+  --accent:#e2803d; --accent-ink:#1d1006; --accent-text:#f0a06a; --accent-soft:#3b2a1c; --accent-line:#8d5228;
+  --leaf:#9cc174; --leaf-ink:#9cc174; --leaf-soft:#26321e; --sea:#79a7e0;
+  --pick:#2f6f9f; --pick-ink:#fff; --focus:#8ab4ff; --brand:#16324a; --edge:#e2803d;
+  --warn-bg:#3a3120; --warn-ink:#f2d690;
+  --paper:#f7f1e6; --paper-ink:#3a3122;
+  --font:"PingFang TC","Noto Sans TC","Noto Sans CJK TC","Microsoft JhengHei",system-ui,sans-serif;
+  --mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --r:12px;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+  color-scheme:light;
+  --bg:#e6dccb; --grid:rgba(90,70,40,.07); --panel:#efe7d9; --surface:#f6f1e7; --surface-2:#ebe2d2; --line:#d2c3a8; --line-2:#9c8a6c;
+  --ink:#2a271f; --muted:#584f3e;
+  --accent:#b5561c; --accent-ink:#fff8f0; --accent-text:#9a4614; --accent-soft:#f1dcc6; --accent-line:#d99a6c;
+  --leaf:#3f6a22; --leaf-ink:#3f6324; --leaf-soft:#dde6cd; --sea:#2f5fa8;
+  --pick:#1f5f8b; --focus:#1f5fc4;
+  --warn-bg:#f6e6bd; --warn-ink:#5d4300;
+  --paper:#fffaf2;
+}}
+:root[data-theme="light"]{
+  color-scheme:light;
+  --bg:#e6dccb; --grid:rgba(90,70,40,.07); --panel:#efe7d9; --surface:#f6f1e7; --surface-2:#ebe2d2; --line:#d2c3a8; --line-2:#9c8a6c;
+  --ink:#2a271f; --muted:#584f3e;
+  --accent:#b5561c; --accent-ink:#fff8f0; --accent-text:#9a4614; --accent-soft:#f1dcc6; --accent-line:#d99a6c;
+  --leaf:#3f6a22; --leaf-ink:#3f6324; --leaf-soft:#dde6cd; --sea:#2f5fa8;
+  --pick:#1f5f8b; --focus:#1f5fc4;
+  --warn-bg:#f6e6bd; --warn-ink:#5d4300;
+  --paper:#fffaf2;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background-color:var(--bg);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px;color:var(--ink);font:400 1rem/1.6 var(--font)}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--accent-text)}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+h1,h2,h3{font-weight:800;margin:0;text-wrap:pretty}
+p{margin:0}
+.main{max-width:1180px;margin:0 auto;padding:0 16px 48px}
+
+/* 版頭：深藍滿版，和黑鮪魚網頁一樣 */
+.top{background:var(--brand);color:#fff;position:relative;z-index:20}
+@media (min-width:760px){.top{position:sticky;top:0}}
+@media (max-height:500px){.top{position:relative}}  /* 手機橫放、放大很多倍時版頭不要黏住，空間留給內容 */
+.top-in{max-width:1180px;margin:0 auto;padding:10px 16px;min-height:64px;display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto;min-width:0;flex:1 1 0;min-height:44px;color:#fff;text-decoration:none}
+.brand > span{min-width:0}
+.brand svg{flex:none;color:var(--edge)}
+.brand b{display:block;font-size:1.15rem;line-height:1.25}
+.brand small{display:block;color:rgba(255,255,255,.78);font-size:.78rem;line-height:1.3}
+.top nav{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+@media (max-width:759px){.top nav{order:3;width:100%}}
+.hbtn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:6px 14px;border:2px solid rgba(255,255,255,.6);border-radius:12px;background:transparent;color:#fff;font-weight:700;font-size:.95rem;text-decoration:none;white-space:nowrap;flex:none}
+.hbtn.pill{border-radius:999px}
+.hbtn[aria-current="page"]{background:#fff;border-color:#fff;color:var(--brand)}
+
+/* 共用 */
+.page-head{display:grid;gap:8px;margin:20px 0 12px}
+.page-head h1{font-size:clamp(1.6rem,4.5vw,2.1rem)}
+.lead{color:var(--muted);max-width:62ch}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.note{color:var(--muted);font-size:.88rem}
+.pending{color:var(--muted)}
+/* 選項按鈕：選到的是藍色加 ✓，橘色只給下一步要按的按鈕 */
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{min-height:44px;padding:6px 12px;border:2px solid var(--line-2);border-radius:12px;background:var(--surface);color:var(--ink);font-weight:700;line-height:1.3}
+.seg button[aria-pressed="true"]{background:var(--pick);border-color:var(--pick);color:var(--pick-ink);font-weight:800}
+.seg button[aria-pressed="true"]::before{content:"✓ "}
+.chip{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:6px 16px;border:2px solid var(--line-2);border-radius:999px;background:var(--surface);color:var(--ink);font-weight:700;font-size:.92rem;text-decoration:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:8px 16px;border:2px solid var(--line-2);border-radius:12px;background:var(--surface);color:var(--ink);font-weight:700;text-decoration:none}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:800}
+.tag{display:inline-block;font-size:.78rem;line-height:1.5;padding:1px 9px;border-radius:999px;border:1px solid var(--line-2);color:var(--ink);white-space:nowrap}
+.st{display:inline-block;font-size:.78rem;line-height:1.5;padding:1px 9px;border-radius:999px;font-weight:700;white-space:nowrap}
+.st.todo{background:var(--surface-2);color:var(--muted)}
+.st.trying{background:var(--warn-bg);color:var(--warn-ink)}
+.st.ready{background:var(--leaf-soft);color:var(--leaf-ink)}
+.tier-s{--tc:var(--leaf)} .tier-b{--tc:var(--sea)} .tier-a{--tc:var(--accent)}
+.foot{margin-top:40px;color:var(--muted);font-size:.82rem;display:grid;gap:4px;justify-items:start}
+.foot .chip{margin-top:6px}
+
+/* 課程清單 */
+.stats{display:flex;gap:6px;flex-wrap:wrap}
+.filters{display:grid;gap:10px;margin:16px 0 6px}
+.frow{display:flex;align-items:center;gap:8px}
+.frow > span{color:var(--muted);font-size:.88rem;min-width:2.6em;flex:none}
+.mach{display:flex;align-items:baseline;gap:10px;margin:28px 0 4px;padding-bottom:6px;border-bottom:2px solid var(--line)}
+.mach h2{font-size:1.4rem}
+.tier-h{display:flex;align-items:center;gap:8px;margin:16px 0 10px;font-weight:800;font-size:.98rem}
+.tier-h i{width:12px;height:12px;border-radius:50%;background:var(--tc)}
+.tier-h span{color:var(--muted);font-weight:400}
+/* 大圖示卡片：手機一排兩張 */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+@media (max-width:560px){.grid{grid-template-columns:1fr 1fr;gap:10px}}
+.card{display:grid;gap:10px;align-content:start;padding:10px 10px 12px;border:2px solid var(--line-2);border-radius:var(--r);background:var(--surface);color:inherit;text-decoration:none}
+.ico{display:grid;place-items:center;aspect-ratio:16/10;border-radius:10px;color:var(--tc);background:var(--panel);background:color-mix(in srgb,var(--tc) 15%,var(--surface))}
+.ico svg{width:46%;height:auto;max-width:96px}
+.card .txt{display:block;min-width:0}
+.num{display:block;font-family:var(--mono);font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.card b{display:block;font-size:1rem;line-height:1.4;margin:2px 0;text-wrap:pretty}
+.prod{display:block;color:var(--muted);font-size:.9rem}
+.card .tags{display:flex;gap:4px 6px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.open{margin-left:auto;font-size:.84rem;font-weight:800;color:var(--accent-text);white-space:nowrap}
+
+/* 每堂課 */
+.back{margin-top:14px}
+.chead{display:grid;gap:14px;margin:10px 0 16px}
+@media (min-width:760px){.chead{grid-template-columns:1fr 260px;align-items:start}}
+.meta{color:var(--muted);font-size:.88rem}
+.chead h1{font-size:clamp(1.5rem,4.2vw,2.05rem);line-height:1.35;margin:4px 0 10px}
+.prodname{font-weight:800}
+.hero{margin:0;display:grid;place-items:center;gap:4px;padding:16px;border:2px dashed var(--line-2);border-radius:var(--r);color:var(--tc);background:var(--panel);background:color-mix(in srgb,var(--tc) 12%,var(--surface));text-align:center}
+.hero small{color:var(--muted);font-size:.8rem}
+@media (max-width:759px){.hero{grid-template-columns:auto 1fr;justify-items:start;text-align:left;gap:12px;padding:10px 14px}.hero svg{width:64px;height:64px}}
+.sec{display:grid;gap:10px;margin-top:14px;max-width:880px}
+.box{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:14px 16px;min-width:0}
+.box h3{font-size:1.05rem;margin-bottom:8px}
+.box > * + *{margin-top:8px}
+/* 收合的段落 */
+details.box{padding:0}
+details.box > summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;padding:10px 16px;border-radius:var(--r)}
+details.box > summary::-webkit-details-marker{display:none}
+details.box > summary h3{margin:0}
+details.box > summary::after{content:"";flex:none;width:9px;height:9px;margin:-4px 4px 0 0;border-right:2.5px solid var(--muted);border-bottom:2.5px solid var(--muted);transform:rotate(45deg)}
+details.box[open] > summary::after{margin-top:4px;transform:rotate(-135deg)}
+details.box > .acc-body{display:grid;gap:8px;padding:0 16px 16px}
+details.box > .acc-body > *{margin:0}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0}
+.kv dt{color:var(--muted);white-space:nowrap}
+.kv dd{margin:0}
+ol.list,ul.list{margin:0;padding-left:1.4em;display:grid;gap:6px}
+.levels{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.levels li{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center}
+.lv{font-size:.8rem;font-weight:800;border:1px solid var(--accent-line);background:var(--accent-soft);border-radius:6px;padding:1px 8px;white-space:nowrap}
+.tbl-wrap{overflow-x:auto}
+table.tbl{border-collapse:collapse;width:100%}
+.tbl th,.tbl td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl th{color:var(--muted);font-weight:700;font-size:.85rem}
+.tbl td.t{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--muted)}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td:not(:last-child){white-space:nowrap}
+
+/* 機器設定 */
+.fields{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+.field{display:grid;gap:4px;align-content:start}
+.field > label,.flabel{font-size:.88rem;color:var(--muted)}
+.uw{display:flex;align-items:center;gap:6px}
+.uw input{flex:1;min-width:0}
+.uw span{color:var(--muted);font-size:.88rem}
+input[type=number],input[type=text],textarea{background:var(--surface);border:2px solid var(--line-2);border-radius:10px;padding:8px 10px;min-height:48px;width:100%;font-variant-numeric:tabular-nums}
+input:focus,textarea:focus{border-color:var(--accent)}
+textarea{font-family:var(--mono);font-size:.8rem;min-height:70px;resize:vertical;word-break:break-all}
+.calc{display:grid;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}
+.check{display:flex;align-items:center;gap:8px;min-height:44px}
+.check input{width:20px;height:20px;accent-color:var(--pick)}
+.preview{background:var(--paper);color:var(--paper-ink);border-radius:10px;padding:10px;overflow-x:auto;border:1px solid var(--line)}
+.preview svg{display:block;width:100%;height:auto}
+.preview .lz path{vector-effect:non-scaling-stroke;stroke-width:1.1px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;color:var(--paper-ink);margin-top:6px}
+.legend i{display:inline-block;width:18px;height:0;border-top:2px solid;vertical-align:middle;margin-right:4px}
+.msg{font-size:.88rem;font-weight:700;color:var(--leaf-ink)}
+.msg.bad{color:var(--accent-text)}
+.empty{padding:20px}
+.step h3{display:flex;align-items:center;gap:8px}
+.stepn{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--pick);color:var(--pick-ink);font-size:.9rem;font-weight:800;flex:none}
+.mtabs{margin:4px 0 2px}
+
+/* 怎麼用 */
+.cards{display:grid;grid-auto-flow:column;grid-auto-columns:100%;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none;margin-top:12px;max-width:640px}
+.cards::-webkit-scrollbar{display:none}
+.hcard{scroll-snap-align:start;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:18px 20px;display:grid;gap:8px;align-content:start;min-height:180px}
+.hcard h3{font-size:1.15rem}
+.pager{margin-top:12px;max-width:640px;justify-content:space-between}
+
+/* 滑鼠移過去的回饋只給有滑鼠的裝置，觸控螢幕點完不會一直停在變色的樣子 */
+@media (hover:hover){
+  .hbtn:hover{border-color:#fff}
+  .seg button:hover,.chip:hover,.btn:hover,a.card:hover{border-color:var(--pick)}
+  .btn.primary:hover{border-color:var(--accent)}
+  details.box > summary:hover{background:var(--surface-2)}
+}
+
+/* 照片雷雕：沿用課程工具箱的樣式（hub.css），這裡只放這頁才有的東西。
+   版面（v0.2）：每一步都在一個畫面內。調整時預覽占滿畫面，設定放在跳出來的視窗：
+   手機從下面出來、可以往下滑關掉；電腦和平板的調整視窗在右邊（不擋預覽），說明類的視窗在中間，都按「關閉」。 */
+[hidden]{display:none!important}
+.top-in{flex-wrap:nowrap}
+.top .wide-only{display:none}
+@media (min-width:760px){.top span.wide-only{display:inline}.top .brand small.wide-only{display:block}}
+
+/* 步驟列 */
+.pt-steps{display:flex;gap:6px;margin:10px 0 4px}
+.pt-steps button{flex:1 1 0;min-height:48px;padding:6px 8px;border:2px solid var(--line-2);border-radius:12px;background:var(--surface);color:var(--ink);font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px}
+.pt-steps button i{font-style:normal;display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--surface-2);font-size:.9rem}
+.pt-steps button[aria-current="step"]{background:var(--pick);border-color:var(--pick);color:var(--pick-ink)}
+.pt-steps button[aria-current="step"] i{background:rgba(255,255,255,.22)}
+.pt-steps button[aria-disabled="true"]{background:var(--surface-2);border-style:dashed;color:var(--muted)}
+.stephint:empty{display:none}
+body[data-step="2"] .main{padding-bottom:12px}
+
+/* 第 1 步 */
+.start{display:grid;gap:14px;max-width:680px;margin:10px auto 0}
+.outrow{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap}
+.start .row.big{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bigbtn{min-height:60px;font-size:1.08rem;padding:10px 16px}
+.warn{margin:0;padding:10px 14px;border-radius:10px;background:var(--warn-bg);color:var(--warn-ink);font-weight:700}
+
+/* 第 2 步：預覽＋工具列 */
+.editor{display:grid;gap:8px;margin-top:8px}
+@media (min-width:760px){.editor{max-width:900px;margin-inline:auto}}
+.ed-modes{display:flex;justify-content:center}
+.stage{display:grid;place-items:center;height:360px;padding:8px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel);overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.pvc{display:block;max-width:100%;cursor:grab;border-radius:6px}
+.stage.dark{background:#14110d;border-color:#2c261d}  /* 開燈預覽：暗的背景才看得出透光 */
+.pvc:active{cursor:grabbing}
+.toolbar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,1.3fr);gap:8px}
+.toolbar .btn{min-height:52px;padding:6px 8px}
+.toolbar .tool[aria-pressed="true"]{background:var(--pick);border-color:var(--pick);color:var(--pick-ink)}
+.toolbar .tool[aria-pressed="true"]::before{content:"✓ "}
+/* 手機打開調整視窗時，版頭、步驟和工具列先收起來，預覽留在視窗上面 */
+@media (max-width:759px){body.sheet-adjust .top,body.sheet-adjust .pt-steps,body.sheet-adjust .stephint,body.sheet-adjust .toolbar{display:none}}
+
+/* 跳出來的視窗 */
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;flex-direction:column;gap:12px;max-height:84dvh;overflow:auto;overscroll-behavior:contain;padding:14px 16px calc(16px + env(safe-area-inset-bottom,0px));background:var(--surface);color:var(--ink);border-top:1px solid var(--line);border-radius:14px 14px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.32)}
+.sheet.side{max-height:60dvh}
+.sheet.swipe{touch-action:pan-y}
+.sheet.swipe::before{content:"";display:block;flex:none;width:40px;height:5px;border-radius:3px;background:var(--line-2);align-self:center;margin:-6px 0 -2px}
+.sheet.enter{animation:sheetUp .22s ease-out}
+@keyframes sheetUp{from{translate:0 100%}}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sheet-head h2{font-size:1.15rem}
+.sheet-head .seg{flex-wrap:nowrap}
+.sheet-body{display:grid;gap:10px}
+.btn.soft{background:var(--surface-2);border-color:var(--surface-2);flex:none}
+.srow{display:grid;grid-template-columns:3.6em minmax(0,1fr);align-items:center;gap:10px}
+.srow > b{font-size:.95rem}
+.srow > b small{display:block;font-size:.78rem;font-weight:400;color:var(--muted)}
+.range{display:flex;align-items:center;gap:10px}
+.range input[type=range]{flex:1;min-width:0;height:44px;accent-color:var(--pick)}
+.range output{min-width:2.4em;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.scrim{position:fixed;inset:0;z-index:39;background:rgba(10,12,10,.5)}
+.toc{display:flex;flex-wrap:wrap;gap:6px}
+@media (min-width:760px), (max-height:500px) and (min-width:600px){
+  .sheet{left:50%;right:auto;top:50%;bottom:auto;transform:translate(-50%,-50%);width:min(560px,calc(100vw - 32px));max-height:calc(100dvh - 48px);border:1px solid var(--line);border-radius:14px;padding-bottom:16px;box-shadow:0 18px 40px rgba(0,0,0,.35)}
+  .sheet.enter{animation:none}
+  .sheet.side{left:auto;right:16px;top:80px;bottom:16px;transform:none;width:360px;max-height:none}
+  body.sheet-adjust .main{padding-right:392px}
+}
+/* 又矮又寬：預覽在左，預覽方式和工具列在右；打開調整視窗時工具列先收起來 */
+@media (max-height:500px) and (min-width:600px){
+  .sheet.side{top:12px;bottom:12px;padding-top:10px;padding-bottom:10px;gap:8px}
+  .sheet.side .sheet-body{gap:8px}
+  body.sheet-adjust .top,body.sheet-adjust .pt-steps,body.sheet-adjust .stephint{display:none}
+  .editor{grid-template-columns:minmax(0,1fr) minmax(170px,220px);grid-template-rows:auto minmax(0,1fr);align-items:start;max-width:none}
+  .stage{grid-column:1;grid-row:1 / span 2}
+  .ed-modes{grid-column:2;grid-row:1;justify-content:stretch}
+  .ed-modes .seg{width:100%}
+  .ed-modes .seg button{flex:1 1 auto}
+  .toolbar{grid-column:2;grid-row:2;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .toolbar .btn.primary{grid-column:1 / -1}
+  body.sheet-adjust .editor{grid-template-columns:minmax(0,1fr)}
+  body.sheet-adjust .ed-modes{grid-column:1;grid-row:1;justify-content:center}
+  body.sheet-adjust .ed-modes .seg{width:auto}
+  body.sheet-adjust .stage{grid-column:1;grid-row:2}
+  body.sheet-adjust .toolbar{display:none}
+  .sheet[data-kind="advanced"]{width:min(760px,calc(100vw - 32px))}
+  .sheet[data-kind="advanced"] .sheet-body{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+}
+@media (prefers-reduced-motion:reduce){.sheet.enter{animation:none}}
+
+/* 第 3 步 */
+.dl{display:grid;gap:14px;max-width:640px;margin:10px auto 0}
+.dl input[type=text]{max-width:320px}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0}
+.facts dt{color:var(--muted)}
+.facts dd{margin:0;font-weight:700}
+.out-in{display:grid;gap:10px}
+@media (min-width:520px){.out-in{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);align-items:center}}
+.thumb svg{display:block;width:100%;max-width:360px;max-height:180px;height:auto;margin:0 auto}
+.thumb canvas{display:block;width:auto;height:auto;max-width:100%;max-height:180px;margin:0 auto;border-radius:8px}
+
+/* 拍攝照片 */
+.cam{position:fixed;inset:0;z-index:60;display:grid;grid-template-rows:auto 1fr auto;background:#111;color:#fff}
+.cam-bar{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--brand)}
+.cam-bar b{margin-right:auto;font-size:1.05rem}
+.cam-v{display:grid;place-items:center;min-height:0;overflow:hidden}
+.cam-v video{width:100%;height:100%;object-fit:contain;background:#000}
+.cam-v video.mirror{transform:scaleX(-1)}
+.cam-foot{display:grid;gap:8px;justify-items:center;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px))}
+.cam-foot .row{justify-content:center}
+.cam-foot .msg.bad{color:#ffb08a}
+.shutter{min-width:200px}
+
+</style>
+</head>
+<body>
+<div id="app"><p style="padding:24px">載入中…</p></div>
+<noscript><p style="padding:24px">這個網頁需要開啟 JavaScript。</p></noscript>
+<script>
+"use strict";
+/* ===== 創客小幫手（照片）：拍照或選照片 → 裁成形狀 → 雷射雕刻的點陣（SVG）或 3D 列印的透光片（STL） =====
+   照片只在這台電腦處理，不上傳、不存檔；記住的只有形狀、大小這些選項。 */
+(() => {
+  const VERSION = "0.4.0";
+
+  /* ---------- 小工具 ---------- */
+  function h(tag, attrs, ...kids) {
+    const e = document.createElement(tag);
+    if (attrs) for (const [k, v] of Object.entries(attrs)) {
+      if (v == null || v === false) continue;
+      if (k === "class") e.className = v;
+      else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+      else e.setAttribute(k, v === true ? "" : v);
+    }
+    for (const k of kids.flat(Infinity)) if (k != null && k !== false) e.append(k.nodeType ? k : document.createTextNode(String(k)));
+    return e;
+  }
+  const svgEl = markup => { const t = document.createElement("template"); t.innerHTML = markup.trim(); return t.content.firstChild; };
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem("photo:" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem("photo:" + k, JSON.stringify(v)); } catch (e) { /* 存不了不影響使用 */ } }
+  };
+  const f2 = n => String(Math.round(n * 100) / 100);
+  const mm1 = n => String(Math.round(n * 10) / 10);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const canvas = (w, hh) => { const c = document.createElement("canvas"); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(hh)); return c; };
+  const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+
+  /* 深色／大地色：和黑鮪魚名牌、課程工具箱共用同一個設定 */
+  const THEME_KEY = "tuna:theme";
+  const themeGet = () => { try { return JSON.parse(localStorage.getItem(THEME_KEY) || '""'); } catch (e) { return ""; } };
+  const themeSet = v => { try { localStorage.setItem(THEME_KEY, JSON.stringify(v)); } catch (e) { /* 存不了也沒關係 */ } };
+  function applyTheme() { const t = themeGet(); if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme; }
+  applyTheme();
+
+  /* 機器設定：課程工具箱存在同一個網站，這裡只讀，用來算立牌底座的插槽 */
+  function machine() {
+    let o = null; try { o = JSON.parse(localStorage.getItem("courses:machine") || "null"); } catch (e) { o = null; }
+    const key = o && o.active === "base" ? "base" : "school", p = (o && o.p && o.p[key]) || {};
+    const num = (v, d) => (typeof v === "number" && isFinite(v) && v > 0 ? v : d);
+    return { found: !!(o && o.p), name: key === "base" ? "基地" : "學校", s3: num(p.s3, 3.0), s5: num(p.s5, 5.0), bump: p.bump === true, bumpD: num(p.bumpD, 1.0) };
+  }
+
+  /* ---------- 選項 ---------- */
+  const KINDS = { charm: "吊飾", stand: "立牌", plain: "純圖案" };
+  const SHAPES = { circle: "圓形", heart: "愛心", square: "方形", rect: "長方形" };
+  const SHAPES_FOR = { charm: ["circle", "heart", "square"], stand: ["rect", "square", "circle"], plain: ["circle", "heart", "square", "rect"] };
+  const SIZES = [40, 50, 60, 80, 100];
+  const STYLES = { dots: "點陣（細緻）", clean: "點陣（清晰）", bw: "黑白（剪影）", gray: "灰階（由 Beam Studio 轉換）" };
+  const DEF = { out: "laser", kind: "charm", shape: "circle", size: 50, orient: "portrait", bright: 58, contrast: 55, fade: false, frame: false, style: "dots", dpi: 250, board: 3 };
+  /* 3D 透光片：款式另外記，切換製作方式時兩邊的設定都留著 */
+  const OUTS = { laser: "雷射雕刻", litho: "3D 透光片" };
+  const LKINDS = { curve: "弧形", stand: "立牌", charm: "吊飾", plain: "純圖案" };
+  const LKIND_FULL = { curve: "弧形立牌", stand: "立牌", charm: "吊飾", plain: "純圖案" };
+  const LSHAPES_FOR = { curve: ["rect", "square"], stand: ["rect", "square", "circle"], charm: ["circle", "heart", "square"], plain: ["circle", "heart", "square", "rect"] };
+  const LSIZES = [40, 50, 60, 80];
+  const LTHICK = { std: [0.8, 3.0], thin: [0.6, 2.4] };
+  const LDEF = { kind: "curve", shape: "rect", size: 60, orient: "landscape", frame: true, thick: "std" };
+  const O = Object.assign({}, DEF, store.get("opts", {}));
+  if (!KINDS[O.kind]) O.kind = DEF.kind;
+  if (!SHAPES_FOR[O.kind].includes(O.shape)) O.shape = SHAPES_FOR[O.kind][0];
+  if (!SIZES.includes(O.size)) O.size = DEF.size;
+  if (!STYLES[O.style]) O.style = DEF.style;
+  if (![250, 500].includes(O.dpi)) O.dpi = DEF.dpi;
+  if (![3, 5].includes(O.board)) O.board = DEF.board;
+  if (!["portrait", "landscape"].includes(O.orient)) O.orient = DEF.orient;
+  for (const k of ["bright", "contrast"]) O[k] = clamp(+O[k] || DEF[k], 0, 100);
+  if (!OUTS[O.out]) O.out = DEF.out;
+  O.L = Object.assign({}, LDEF, O.L && typeof O.L === "object" ? O.L : {});
+  if (!LKINDS[O.L.kind]) O.L.kind = LDEF.kind;
+  if (!LSHAPES_FOR[O.L.kind].includes(O.L.shape)) O.L.shape = LSHAPES_FOR[O.L.kind][0];
+  if (!LSIZES.includes(O.L.size)) O.L.size = LDEF.size;
+  if (!["portrait", "landscape"].includes(O.L.orient)) O.L.orient = LDEF.orient;
+  if (!LTHICK[O.L.thick]) O.L.thick = LDEF.thick;
+  O.L.frame = O.L.frame !== false;
+  try { const q = new URLSearchParams(location.search).get("out"); if (OUTS[q]) O.out = q; } catch (e) { /* 網址參數讀不到就用記住的 */ }
+  const save = () => store.set("opts", O);
+  const isL = () => O.out === "litho";
+  const P = () => (isL() ? O.L : O);  /* 目前製作方式的款式設定 */
+  const kindsNow = () => (isL() ? LKINDS : KINDS);
+  const shapesFor = k => (isL() ? LSHAPES_FOR : SHAPES_FOR)[k];
+  const sizesNow = () => (isL() ? LSIZES : SIZES);
+
+  /* ---------- 形狀（單位 mm，原點在左上角） ---------- */
+  const MARGIN = 1.0, RING = 0.8, RING_GAP = 1.0, HOLE_R = 2.0, HOLE_KEEP = 3.6;
+  function circlePts(cx, cy, r, a0, a1, n) { const p = []; for (let i = 0; i <= n; i++) { const t = a0 + (a1 - a0) * i / n; p.push([cx + r * Math.cos(t), cy + r * Math.sin(t)]); } return p; }
+  function rrPts(w, hh, r) {  /* 圓角長方形，順時針：上 → 右 → 下 → 左 */
+    const n = 10, p = [], c = [[w - r, r, -Math.PI / 2], [w - r, hh - r, 0], [r, hh - r, Math.PI / 2], [r, r, Math.PI]];
+    for (const [cx, cy, a] of c) p.push(...circlePts(cx, cy, r, a, a + Math.PI / 2, n));
+    return p;
+  }
+  function heartRaw() {
+    if (heartRaw.r) return heartRaw.r;
+    const raw = [];
+    for (let i = 0; i < 240; i++) { const t = i / 240 * Math.PI * 2, s = Math.sin(t); raw.push([16 * s * s * s, -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t))]); }
+    let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+    for (const [x, y] of raw) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+    return (heartRaw.r = { raw, x0, x1, y0, y1 });
+  }
+  /* 原始座標 → 實際大小；(0, 0) 在愛心中間（從這裡看得到整個邊），(0, -5) 是上面的凹口 */
+  const heartMap = (w, hh) => { const R = heartRaw(); return ([x, y]) => [(x - R.x0) / (R.x1 - R.x0) * w, (y - R.y0) / (R.y1 - R.y0) * hh]; };
+  const heartPts = (w, hh) => heartRaw().raw.map(heartMap(w, hh));
+  function geom() {
+    if (isL()) return geomL();
+    const W = O.size, kind = O.kind, shape = O.shape, M = machine();
+    let H, outline;
+    if (shape === "circle") { H = W; outline = circlePts(W / 2, W / 2, W / 2, 0, Math.PI * 2, 180).slice(0, -1); }
+    else if (shape === "heart") { H = Math.round(W * 0.9 * 10) / 10; outline = heartPts(W, H); }
+    else if (shape === "square") { H = W; outline = rrPts(W, W, W * 0.12); }
+    else { H = Math.round((O.orient === "landscape" ? W * 0.75 : W * 4 / 3) * 10) / 10; outline = rrPts(W, H, Math.min(4, W * 0.06)); }
+    const G = { W, H, Hfull: H, outline, full: outline, hole: null, base: null, tab: null, shape, kind };
+    if (kind === "charm") { const at = shape === "heart" ? [W * 0.27, H * 0.21] : [W / 2, Math.max(4.6, H * 0.09)]; G.hole = { x: at[0], y: at[1], r: HOLE_R }; }
+    if (kind === "stand") {
+      const T = O.board, sw = T === 5 ? M.s5 : M.s3;
+      let tw, full, yb;
+      if (shape === "circle") {
+        const R = W / 2; tw = clamp(R * 0.5, 10, 22);
+        const t0 = Math.acos(tw / 2 / R), ys = R + R * Math.sin(t0); yb = ys + T;
+        full = circlePts(R, R, R, Math.PI - t0, t0 + Math.PI * 2, 180);
+        full.push([R + tw / 2, yb], [R - tw / 2, yb]);
+      } else {
+        tw = clamp(W * 0.45, 12, 36); yb = H + T;
+        full = []; const n = outline.length / 4;  /* 四個角各 n 點：下邊在第 2、3 個角之間 */
+        outline.forEach((p, i) => { full.push(p); if (i === n * 2 - 1) full.push([W / 2 + tw / 2, H], [W / 2 + tw / 2, yb], [W / 2 - tw / 2, yb], [W / 2 - tw / 2, H]); });
+      }
+      G.full = full; G.Hfull = yb; G.tab = { w: tw, h: T };
+      const Wb = Math.round(clamp(W * 0.9, tw + 20, W + 10)), Db = Math.round(clamp(G.Hfull * 0.32, 24, 40)), L = tw + 0.4;
+      G.base = { W: Wb, D: Db, slotL: L, slotW: sw, bump: M.bump ? M.bumpD : 0, outline: rrPts(Wb, Db, 4), M };
+    }
+    return G;
+  }
+  /* 透光片：長方形、方形是直角；外框 2.5 mm 一律最厚 */
+  function geomL() {
+    const L = O.L, W = L.size, shape = L.shape, [t0, t1] = LTHICK[L.thick];
+    let H, outline, c = null;
+    if (shape === "circle") { H = W; outline = circlePts(W / 2, W / 2, W / 2, 0, Math.PI * 2, 360).slice(0, -1); c = [W / 2, W / 2]; }
+    else if (shape === "heart") { H = Math.round(W * 0.9 * 10) / 10; outline = heartPts(W, H); c = heartMap(W, H)([0, 0]); }
+    else { H = shape === "square" ? W : Math.round((L.orient === "landscape" ? W * 0.75 : W * 4 / 3) * 10) / 10; outline = [[0, 0], [W, 0], [W, H], [0, H]]; }
+    const G = { litho: true, kind: L.kind, shape, W, H, Hfull: H, outline, full: outline, hole: null, base: null, tab: null, c, t0, t1, fw: L.frame ? 2.5 : 0, curve: L.kind === "curve", foot: null, loop: null };
+    if (L.kind === "stand") G.foot = { h: 4, d: Math.round(clamp(H * 0.12, 6, 12)), sink: shape === "circle" ? 2.5 : 1.5, w: shape === "circle" ? Math.round(W * 0.7) : W };
+    if (L.kind === "charm") G.loop = { cx: W / 2, cy: -3, a: 3.5, r: 1.8, yb: (shape === "heart" ? heartMap(W, H)([0, -5])[1] : 0) + 2 };
+    G.vb = [G.foot ? Math.min(0, W / 2 - G.foot.w / 2) : 0, G.loop ? G.loop.cy - G.loop.a : 0, G.foot ? Math.max(W, W / 2 + G.foot.w / 2) : W, G.foot ? H - G.foot.sink + G.foot.h : H];
+    return G;
+  }
+
+  /* ---------- 照片和裁切 ---------- */
+  let IMG = null, imgSeq = 0;  // IMG: { c: canvas, w, h, sample, id }
+  const crop = { z: 1, cx: 0, cy: 0 };
+  function cropRect(G) {
+    const sMax = Math.min(IMG.w / G.W, IMG.h / G.H), s = sMax / crop.z, sw = G.W * s, sh = G.H * s;
+    crop.cx = clamp(crop.cx, sw / 2, IMG.w - sw / 2); crop.cy = clamp(crop.cy, sh / 2, IMG.h - sh / 2);
+    return { sx: crop.cx - sw / 2, sy: crop.cy - sh / 2, sw, sh };
+  }
+  function setImage(src, w, hh, sample) {
+    const k = Math.min(1, 2400 / Math.max(w, hh)), c = canvas(w * k, hh * k), x = c.getContext("2d");
+    x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height);
+    x.drawImage(src, 0, 0, c.width, c.height);
+    IMG = { c, w: c.width, h: c.height, sample: !!sample, id: ++imgSeq };
+    crop.z = 1; crop.cx = c.width / 2; crop.cy = c.height / 2;
+    syncZoom(); go(2);
+  }
+  function rotateImage() {
+    if (!IMG) return;
+    const c = canvas(IMG.h, IMG.w), x = c.getContext("2d");
+    x.translate(c.width, 0); x.rotate(Math.PI / 2); x.drawImage(IMG.c, 0, 0);
+    IMG = { c, w: c.width, h: c.height, sample: IMG.sample, id: ++imgSeq };
+    crop.cx = c.width / 2; crop.cy = c.height / 2; schedule(false);
+  }
+  function loadFile(file) {
+    if (!file) return;
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); setImage(img, img.naturalWidth, img.naturalHeight, false); };
+    img.onerror = () => { URL.revokeObjectURL(url); say(startMsg, "無法開啟這張照片，請改用 JPG 或 PNG 格式。", true); };
+    img.src = url;
+  }
+  /* 試刻卡：10 格灰階＋漸層＋圓球，第一次刻新木板時先刻這張，看哪個亮度最好 */
+  function testCard() {
+    const N = 900, c = canvas(N, N), x = c.getContext("2d");
+    x.fillStyle = "#fff"; x.fillRect(0, 0, N, N);
+    const cell = 150, gx = 75;
+    for (let i = 0; i < 10; i++) {
+      const v = Math.round(255 * i / 9), col = i % 5, row = Math.floor(i / 5), px = gx + col * cell, py = 60 + row * (cell + 20);
+      x.fillStyle = `rgb(${v},${v},${v})`; x.fillRect(px, py, cell - 10, cell - 10);
+      x.fillStyle = v < 128 ? "#fff" : "#000"; x.font = "bold 54px sans-serif"; x.textAlign = "center"; x.textBaseline = "middle";
+      x.fillText(String(i + 1), px + (cell - 10) / 2, py + (cell - 10) / 2);
+    }
+    const gr = x.createLinearGradient(gx, 0, N - gx, 0); gr.addColorStop(0, "#000"); gr.addColorStop(1, "#fff");
+    x.fillStyle = gr; x.fillRect(gx, 420, N - 2 * gx, 90);
+    const rg = x.createRadialGradient(330, 610, 20, 420, 690, 190); rg.addColorStop(0, "#fff"); rg.addColorStop(0.6, "#888"); rg.addColorStop(1, "#111");
+    x.fillStyle = rg; x.beginPath(); x.arc(420, 690, 170, 0, Math.PI * 2); x.fill();
+    x.fillStyle = "#000"; x.font = "bold 46px sans-serif"; x.textAlign = "left"; x.fillText("試刻卡", 640, 650); x.font = "34px sans-serif"; x.fillText("比對各格", 640, 710); x.fillText("的深淺", 640, 755);
+    O.kind = "plain"; O.shape = "square"; O.size = 50; save();
+    setImage(c, N, N, true);
+  }
+
+  /* ---------- 轉成雷射的點點 ---------- */
+  function shapePath(G, s) {
+    const p = new Path2D();
+    if (G.shape === "circle") p.arc(G.W / 2 * s, G.H / 2 * s, G.W / 2 * s, 0, Math.PI * 2);
+    else { G.outline.forEach(([x, y], i) => (i ? p.lineTo(x * s, y * s) : p.moveTo(x * s, y * s))); p.closePath(); }
+    return p;
+  }
+  function maskOf(nx, ny, path, erode, holes) {
+    const c = canvas(nx, ny), x = c.getContext("2d");
+    x.fillStyle = "#fff"; x.fill(path);
+    x.globalCompositeOperation = "destination-out";
+    if (erode > 0) { x.lineWidth = erode * 2; x.lineJoin = "round"; x.strokeStyle = "#000"; x.stroke(path); }
+    for (const o of holes || []) { x.beginPath(); x.arc(o.x, o.y, o.r, 0, Math.PI * 2); x.fill(); }
+    const d = x.getImageData(0, 0, nx, ny).data, m = new Uint8Array(nx * ny);
+    for (let i = 0; i < m.length; i++) m[i] = d[i * 4 + 3] > 127 ? 1 : 0;
+    return m;
+  }
+  function compute(G, dpi) {
+    const ppm = dpi / 25.4, nx = Math.max(8, Math.round(G.W * ppm)), ny = Math.max(8, Math.round(G.H * ppm)), n = nx * ny;
+    const path = shapePath(G, ppm), keep = G.hole ? [{ x: G.hole.x * ppm, y: G.hole.y * ppm, r: HOLE_KEEP * ppm }] : null;
+    const inner = maskOf(nx, ny, path, (O.frame ? MARGIN + RING + RING_GAP : MARGIN) * ppm, keep);
+    let ring = null;
+    if (O.frame) {
+      const a = maskOf(nx, ny, path, MARGIN * ppm, keep), b = maskOf(nx, ny, path, (MARGIN + RING) * ppm, null);
+      ring = new Uint8Array(n); for (let i = 0; i < n; i++) ring[i] = a[i] && !b[i] ? 1 : 0;
+    }
+    const v = toneGrid(G, nx, ny, inner);
+    /* 4. 轉成點點 */
+    const bits = O.style === "bw" ? threshold(v, inner) : O.style === "clean" ? atkinson(v, inner, nx, ny) : jarvis(v, inner, nx, ny);
+    if (ring) for (let i = 0; i < n; i++) if (ring[i]) bits[i] = 1;
+    return { nx, ny, ppm, v, bits, inner, ring, path };
+  }
+  /* 照片 → 0（黑）～1（白）；inner 以外當成白色 */
+  function toneGrid(G, nx, ny, inner) {
+    const n = nx * ny;
+    /* 1. 灰階 */
+    const r = cropRect(G), gc = canvas(nx, ny), gx = gc.getContext("2d");
+    gx.imageSmoothingEnabled = true; gx.imageSmoothingQuality = "high";
+    gx.fillStyle = "#fff"; gx.fillRect(0, 0, nx, ny);
+    gx.drawImage(IMG.c, r.sx, r.sy, r.sw, r.sh, 0, 0, nx, ny);
+    const d = gx.getImageData(0, 0, nx, ny).data, g = new Float32Array(n);
+    for (let i = 0, j = 0; i < n; i++, j += 4) g[i] = (0.299 * d[j] + 0.587 * d[j + 1] + 0.114 * d[j + 2]) / 255;
+    /* 2. 讓細節清楚一點（試刻卡不做） */
+    if (!IMG.sample) {
+      const t = new Float32Array(n), b = new Float32Array(n);
+      for (let y = 0; y < ny; y++) for (let x = 0; x < nx; x++) { const i = y * nx + x; t[i] = (g[y * nx + Math.max(0, x - 1)] + g[i] + g[y * nx + Math.min(nx - 1, x + 1)]) / 3; }
+      for (let y = 0; y < ny; y++) for (let x = 0; x < nx; x++) { const i = y * nx + x; b[i] = (t[Math.max(0, y - 1) * nx + x] + t[i] + t[Math.min(ny - 1, y + 1) * nx + x]) / 3; }
+      for (let i = 0; i < n; i++) g[i] = g[i] + 0.7 * (g[i] - b[i]);
+    }
+    /* 3. 自動調亮暗：最暗的變黑、最亮的變白（試刻卡不做） */
+    let lo = 0, hi = 1;
+    if (!IMG.sample) {
+      const hist = new Uint32Array(256); let cnt = 0;
+      for (let i = 0; i < n; i++) if (inner[i]) { hist[clamp(Math.round(g[i] * 255), 0, 255)]++; cnt++; }
+      const pick = q => { let s = 0; for (let k = 0; k < 256; k++) { s += hist[k]; if (s >= q * cnt) return k / 255; } return 1; };
+      if (cnt > 50) { lo = pick(0.006); hi = pick(0.988); if (hi - lo < 0.12) { lo = 0; hi = 1; } }
+    }
+    const k = O.contrast < 50 ? 0.55 + O.contrast / 100 * 0.9 : 1 + (O.contrast - 50) / 50 * 0.8, gam = Math.pow(2, (50 - O.bright) / 40);
+    const v = new Float32Array(n);
+    for (let y = 0; y < ny; y++) for (let x = 0; x < nx; x++) {
+      const i = y * nx + x;
+      if (!inner[i]) { v[i] = 1; continue; }
+      let t = (g[i] - lo) / (hi - lo); t = clamp(0.5 + (t - 0.5) * k, 0, 1); t = Math.pow(t, gam);
+      if (O.fade) { const dx = ((x + 0.5) / nx - 0.5) * 2, dy = ((y + 0.5) / ny - 0.5) * 2; t += (1 - t) * smooth(0.62, 0.98, Math.hypot(dx, dy)); }
+      v[i] = t;
+    }
+    return v;
+  }
+  function threshold(v, m) { const b = new Uint8Array(v.length); for (let i = 0; i < v.length; i++) b[i] = m[i] && v[i] < 0.5 ? 1 : 0; return b; }
+  function jarvis(v0, m, nx, ny) {
+    const v = Float32Array.from(v0), b = new Uint8Array(v.length);
+    const W = [[1, 0, 7], [2, 0, 5], [-2, 1, 3], [-1, 1, 5], [0, 1, 7], [1, 1, 5], [2, 1, 3], [-2, 2, 1], [-1, 2, 3], [0, 2, 5], [1, 2, 3], [2, 2, 1]];
+    for (let y = 0; y < ny; y++) {
+      const dir = y % 2 ? -1 : 1;
+      for (let s = 0; s < nx; s++) {
+        const x = dir > 0 ? s : nx - 1 - s, i = y * nx + x;
+        if (!m[i]) continue;
+        const old = v[i], nw = old < 0.5 ? 0 : 1, e = old - nw; b[i] = nw ? 0 : 1;
+        for (const [dx, dy, w] of W) { const xx = x + dx * dir, yy = y + dy; if (xx < 0 || xx >= nx || yy >= ny) continue; const j = yy * nx + xx; if (m[j]) v[j] += e * w / 48; }
+      }
+    }
+    return b;
+  }
+  function atkinson(v0, m, nx, ny) {
+    const v = Float32Array.from(v0), b = new Uint8Array(v.length), W = [[1, 0], [2, 0], [-1, 1], [0, 1], [1, 1], [0, 2]];
+    for (let y = 0; y < ny; y++) for (let x = 0; x < nx; x++) {
+      const i = y * nx + x; if (!m[i]) continue;
+      const old = v[i], nw = old < 0.5 ? 0 : 1, e = (old - nw) / 8; b[i] = nw ? 0 : 1;
+      for (const [dx, dy] of W) { const xx = x + dx, yy = y + dy; if (xx < 0 || xx >= nx || yy >= ny) continue; const j = yy * nx + xx; if (m[j]) v[j] += e; }
+    }
+    return b;
+  }
+
+  /* ---------- 3D 透光片：照片越暗的地方越厚，開燈時透出的光越少 ----------
+     直立列印：圖案面朝前（-Y），背面平的（+Y），底邊在 z = 0。單位 mm。 */
+  const LT_ALPHA = 1.3;          /* 預覽用：每 mm 的透光衰減（白色 PLA 的大概值） */
+  const RC_ANGLE = Math.PI / 2;  /* 彎曲立牌的弧度：90° */
+  const PLA_DENSITY = 1.24;      /* g/cm³ */
+  function alphaOf(nx, ny, path, erode) {
+    const c = canvas(nx, ny), x = c.getContext("2d");
+    x.fillStyle = "#fff"; x.fill(path);
+    if (erode > 0) { x.globalCompositeOperation = "destination-out"; x.lineWidth = erode * 2; x.lineJoin = "round"; x.strokeStyle = "#000"; x.stroke(path); }
+    const d = x.getImageData(0, 0, nx, ny).data, a = new Float32Array(nx * ny);
+    for (let i = 0; i < a.length; i++) a[i] = d[i * 4 + 3] / 255;
+    return a;
+  }
+  /* 厚度圖：每個像素中心的厚度；外框一律最厚 */
+  function thickGrid(G, ppm) {
+    const nx = Math.max(8, Math.round(G.W * ppm)), ny = Math.max(8, Math.round(G.H * ppm)), path = shapePath(G, ppm);
+    const inside = alphaOf(nx, ny, path, 0), inner = new Uint8Array(nx * ny);
+    for (let i = 0; i < inner.length; i++) inner[i] = inside[i] > 0.5 ? 1 : 0;
+    const v = toneGrid(G, nx, ny, inner), keep = G.fw > 0 ? alphaOf(nx, ny, path, G.fw * ppm) : null, t = new Float32Array(nx * ny);
+    for (let i = 0; i < t.length; i++) { let d = G.t1 - v[i] * (G.t1 - G.t0); if (keep) d = G.t1 + (d - G.t1) * keep[i]; t[i] = d; }
+    return { nx, ny, ppm, t, inside };
+  }
+  function sampler(T) {
+    return (x, y) => {
+      const fx = clamp(x * T.ppm - 0.5, 0, T.nx - 1), fy = clamp(y * T.ppm - 0.5, 0, T.ny - 1);
+      const x0 = Math.min(T.nx - 2, Math.floor(fx)), y0 = Math.min(T.ny - 2, Math.floor(fy)), ax = fx - x0, ay = fy - y0, i = y0 * T.nx + x0, t = T.t;
+      return (t[i] * (1 - ax) + t[i + 1] * ax) * (1 - ay) + (t[i + T.nx] * (1 - ax) + t[i + T.nx + 1] * ax) * ay;
+    };
+  }
+  /* 封閉多邊形依周長重新取等距的點 */
+  function resample(pts, step) {
+    const n = pts.length, seg = []; let per = 0;
+    for (let i = 0; i < n; i++) { const a = pts[i], b = pts[(i + 1) % n], l = Math.hypot(b[0] - a[0], b[1] - a[1]); seg.push(l); per += l; }
+    const N = Math.max(48, Math.round(per / step)), out = []; let i = 0, acc = 0;
+    for (let k = 0; k < N; k++) {
+      const s = k * per / N;
+      while (i < n - 1 && acc + seg[i] < s) { acc += seg[i]; i++; }
+      const a = pts[i], b = pts[(i + 1) % n], f = seg[i] > 0 ? (s - acc) / seg[i] : 0;
+      out.push([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]);
+    }
+    return out;
+  }
+  const area2 = p => { let s = 0; for (let i = 0; i < p.length; i++) { const a = p[i], b = p[(i + 1) % p.length]; s += a[0] * b[1] - b[0] * a[1]; } return s; };
+  /* 吊飾的吊環：上面半圓、下面長方形（插進透光片裡），中間一個孔；u 往右、v 往上 */
+  function tabRing(G, M) {
+    const Lp = G.loop, uc = Lp.cx, vc = G.H - Lp.cy, vb = G.H - Lp.yb, out = [], inn = [];
+    for (let m = 0; m < M; m++) {
+      const a = (m + 0.5) / M * Math.PI * 2, c = Math.cos(a), s = Math.sin(a);
+      let r = Lp.a;
+      if (s < 0) r = Math.min(Math.abs(c) > 1e-9 ? Lp.a / Math.abs(c) : 1e9, (vc - vb) / -s);
+      out.push([uc + r * c, vc + r * s]); inn.push([uc + Lp.r * c, vc + Lp.r * s]);
+    }
+    return { out, inn, uc, vc };
+  }
+  /* 網格：正面依厚度起伏，背面是平的（彎曲立牌是圓柱面），四周用牆封起來 */
+  function lithoMesh(G) {
+    const step = Math.max(0.2, Math.max(G.W, G.H) / 250), T = thickGrid(G, 1 / step), th = sampler(T), H = G.H;
+    const V = [], F = [], add = (x, y, z) => { V.push(x, y, z); return V.length / 3 - 1; }, tri = (a, b, c) => { F.push(a, b, c); };
+    const zOff = G.foot ? G.foot.h - G.foot.sink : 0, Rc = G.W / RC_ANGLE;
+    const P = (u, v, d) => {
+      if (!G.curve) return [u - G.W / 2, -d, v + zOff];
+      const a = (u - G.W / 2) / Rc; return [(Rc + d) * Math.sin(a), Rc - (Rc + d) * Math.cos(a), v];
+    };
+    /* 外圍牆：Fl、Bl 是同一圈（從正面看逆時針）的正面點和背面點 */
+    const wall = (Fl, Bl) => { for (let m = 0; m < Fl.length; m++) { const n = (m + 1) % Fl.length; tri(Fl[m], Bl[m], Fl[n]); tri(Fl[n], Bl[m], Bl[n]); } };
+    const orient = (a, b, c, want) => {
+      const A = a * 3, B = b * 3, C = c * 3, ux = V[B] - V[A], uy = V[B + 1] - V[A + 1], uz = V[B + 2] - V[A + 2], wx = V[C] - V[A], wy = V[C + 1] - V[A + 1], wz = V[C + 2] - V[A + 2];
+      const nx = uy * wz - uz * wy, ny = uz * wx - ux * wz, nz = ux * wy - uy * wx;
+      if (nx * want[0] + ny * want[1] + nz * want[2] < 0) tri(a, c, b); else tri(a, b, c);
+    };
+    if (G.shape === "rect" || G.shape === "square") {
+      const nx = Math.round(G.W / step) + 1, ny = Math.round(H / step) + 1, du = G.W / (nx - 1), dv = H / (ny - 1), Ti = nx - 1, Tj = ny - 1;
+      const Fi = new Int32Array(nx * ny);
+      for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { const u = i * du, v = j * dv; Fi[j * nx + i] = add(...P(u, v, th(u, H - v))); }
+      for (let j = 0; j < Tj; j++) for (let i = 0; i < Ti; i++) { const a = j * nx + i; tri(Fi[a], Fi[a + 1], Fi[a + nx]); tri(Fi[a + 1], Fi[a + nx + 1], Fi[a + nx]); }
+      const Bm = new Map(), B = (i, j) => { const k = j * nx + i; if (!Bm.has(k)) Bm.set(k, add(...P(i * du, j * dv, 0))); return Bm.get(k); };
+      const ring = [];
+      for (let i = 0; i < Ti; i++) ring.push([i, 0]);
+      for (let j = 0; j < Tj; j++) ring.push([Ti, j]);
+      for (let i = Ti; i > 0; i--) ring.push([i, Tj]);
+      for (let j = Tj; j > 0; j--) ring.push([0, j]);
+      wall(ring.map(([i, j]) => Fi[j * nx + i]), ring.map(([i, j]) => B(i, j)));
+      /* 背面：一條條直的長條；最左、最右兩條用扇形接上邊上的點 */
+      for (let j = 0; j < Tj; j++) tri(B(1, 0), B(0, j), B(0, j + 1));
+      tri(B(1, 0), B(0, Tj), B(1, Tj));
+      for (let i = 1; i < Ti - 1; i++) { tri(B(i, 0), B(i, Tj), B(i + 1, 0)); tri(B(i + 1, 0), B(i, Tj), B(i + 1, Tj)); }
+      for (let j = 0; j < Tj; j++) tri(B(Ti - 1, 0), B(Ti, j + 1), B(Ti, j));
+      tri(B(Ti - 1, 0), B(Ti - 1, Tj), B(Ti, Tj));
+    } else {
+      /* 圓形、愛心：從中心往外一圈一圈，外圈的點比內圈多 */
+      const uv = ([x, y]) => [x, H - y];
+      const bnd = resample(G.outline, step).map(uv);
+      if (area2(bnd) < 0) bnd.reverse();
+      const N = bnd.length, C = uv(G.c);
+      let rmax = 0; for (const p of bnd) rmax = Math.max(rmax, Math.hypot(p[0] - C[0], p[1] - C[1]));
+      const K = Math.max(3, Math.round(rmax / step));
+      const at = (s, k) => {
+        const f = s * N, i0 = Math.floor(f) % N, i1 = (i0 + 1) % N, a = f - Math.floor(f), r = k / K;
+        return [C[0] + r * (bnd[i0][0] * (1 - a) + bnd[i1][0] * a - C[0]), C[1] + r * (bnd[i0][1] * (1 - a) + bnd[i1][1] * a - C[1])];
+      };
+      const front = p => add(...P(p[0], p[1], th(p[0], H - p[1])));
+      const zip = (A, Bv) => {
+        const na = A.length, nb = Bv.length; let i = 0, j = 0;
+        while (i < na || j < nb) {
+          if (j >= nb || (i < na && (i + 1) / na <= (j + 1) / nb)) { tri(A[i % na], Bv[j % nb], A[(i + 1) % na]); i++; }
+          else { tri(A[i % na], Bv[j % nb], Bv[(j + 1) % nb]); j++; }
+        }
+      };
+      const center = front(C);
+      let prev = null;
+      for (let k = 1; k <= K; k++) {
+        const n = k === K ? N : Math.max(6, Math.round(N * k / K)), cur = [];
+        for (let m = 0; m < n; m++) cur.push(front(k === K ? bnd[m] : at(m / n, k)));
+        if (k === 1) for (let m = 0; m < n; m++) tri(center, cur[m], cur[(m + 1) % n]);
+        else zip(prev, cur);
+        prev = cur;
+      }
+      const cb = add(...P(C[0], C[1], 0)), ob = bnd.map(p => add(...P(p[0], p[1], 0)));
+      for (let m = 0; m < N; m++) tri(cb, ob[(m + 1) % N], ob[m]);
+      wall(prev, ob);
+    }
+    /* 平面立牌的底座：一塊長方體，透光片下緣插進去一點（切片軟體會合併） */
+    if (G.foot) {
+      const f = G.foot, x0 = -f.w / 2, x1 = f.w / 2, y0 = -G.t1 - f.d, y1 = f.d, z0 = 0, z1 = f.h, mid = [0, (y0 + y1) / 2, f.h / 2];
+      const p = [[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0], [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]].map(q => add(...q));
+      for (const [a, b, c, d] of [[0, 1, 2, 3], [4, 5, 6, 7], [0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7]]) {
+        const q = [a, b, c, d].map(k => p[k]), cx = q.reduce((s, k) => s + V[k * 3], 0) / 4, cy = q.reduce((s, k) => s + V[k * 3 + 1], 0) / 4, cz = q.reduce((s, k) => s + V[k * 3 + 2], 0) / 4, want = [cx - mid[0], cy - mid[1], cz - mid[2]];
+        orient(q[0], q[1], q[2], want); orient(q[0], q[2], q[3], want);
+      }
+    }
+    /* 吊飾的吊環：和外框一樣厚 */
+    if (G.loop) {
+      const M = 64, R = tabRing(G, M), d1 = G.t1, ax = P(R.uc, R.vc, 0);
+      const of = R.out.map(p => add(...P(p[0], p[1], d1))), ob = R.out.map(p => add(...P(p[0], p[1], 0)));
+      const inf = R.inn.map(p => add(...P(p[0], p[1], d1))), inb = R.inn.map(p => add(...P(p[0], p[1], 0)));
+      const radial = (k, sign) => [sign * (V[k * 3] - ax[0]), 0, sign * (V[k * 3 + 2] - ax[2])];
+      for (let m = 0; m < M; m++) {
+        const n = (m + 1) % M;
+        orient(of[m], of[n], inf[n], [0, -1, 0]); orient(of[m], inf[n], inf[m], [0, -1, 0]);
+        orient(ob[m], ob[n], inb[n], [0, 1, 0]); orient(ob[m], inb[n], inb[m], [0, 1, 0]);
+        const wo = radial(of[m], 1); wo[0] += V[of[n] * 3] - ax[0]; wo[2] += V[of[n] * 3 + 2] - ax[2];
+        orient(of[m], of[n], ob[n], wo); orient(of[m], ob[n], ob[m], wo);
+        const wi = radial(inf[m], -1); wi[0] -= V[inf[n] * 3] - ax[0]; wi[2] -= V[inf[n] * 3 + 2] - ax[2];
+        orient(inf[m], inf[n], inb[n], wi); orient(inf[m], inb[n], inb[m], wi);
+      }
+    }
+    let zmin = Infinity; for (let i = 2; i < V.length; i += 3) zmin = Math.min(zmin, V[i]);
+    if (zmin) for (let i = 2; i < V.length; i += 3) V[i] -= zmin;
+    return { V, F, step };
+  }
+  function meshStats(M) {
+    const V = M.V, F = M.F, lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9]; let vol = 0;
+    for (let i = 0; i < V.length; i += 3) for (let k = 0; k < 3; k++) { lo[k] = Math.min(lo[k], V[i + k]); hi[k] = Math.max(hi[k], V[i + k]); }
+    for (let i = 0; i < F.length; i += 3) {
+      const a = F[i] * 3, b = F[i + 1] * 3, c = F[i + 2] * 3;
+      vol += V[a] * (V[b + 1] * V[c + 2] - V[b + 2] * V[c + 1]) - V[a + 1] * (V[b] * V[c + 2] - V[b + 2] * V[c]) + V[a + 2] * (V[b] * V[c + 1] - V[b + 1] * V[c]);
+    }
+    return { tris: F.length / 3, size: [hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]], vol: vol / 6, bytes: 84 + 50 * F.length / 3 };
+  }
+  /* 二進位 STL */
+  function stlBuffer(M) {
+    const V = M.V, F = M.F, n = F.length / 3, buf = new ArrayBuffer(84 + 50 * n), dv = new DataView(buf);
+    const head = "maker-helper photo lithophane (mm)";
+    for (let i = 0; i < head.length; i++) dv.setUint8(i, head.charCodeAt(i));
+    dv.setUint32(80, n, true);
+    let o = 84;
+    for (let t = 0; t < F.length; t += 3) {
+      const a = F[t] * 3, b = F[t + 1] * 3, c = F[t + 2] * 3;
+      const ux = V[b] - V[a], uy = V[b + 1] - V[a + 1], uz = V[b + 2] - V[a + 2], wx = V[c] - V[a], wy = V[c + 1] - V[a + 1], wz = V[c + 2] - V[a + 2];
+      let nx = uy * wz - uz * wy, ny = uz * wx - ux * wz, nz = ux * wy - uy * wx; const l = Math.hypot(nx, ny, nz) || 1; nx /= l; ny /= l; nz /= l;
+      for (const q of [nx, ny, nz, V[a], V[a + 1], V[a + 2], V[b], V[b + 1], V[b + 2], V[c], V[c + 1], V[c + 2]]) { dv.setFloat32(o, q, true); o += 4; }
+      dv.setUint16(o, 0, true); o += 2;
+    }
+    return buf;
+  }
+  /* 預覽：開燈（光透過來）或關燈（白色塑膠，看得到一點起伏） */
+  function lithoCanvas(G, ppm, lit) {
+    const T = thickGrid(G, ppm), nx = T.nx, ny = T.ny, c = canvas(nx, ny), x = c.getContext("2d"), im = x.createImageData(nx, ny), px = im.data, t = T.t;
+    for (let y = 0; y < ny; y++) for (let xx = 0; xx < nx; xx++) {
+      const i = y * nx + xx, j = i * 4, a = T.inside[i];
+      if (a <= 0.01) { px[j + 3] = 0; continue; }
+      if (lit) {
+        const k = Math.pow(Math.exp(-LT_ALPHA * (t[i] - G.t0)), 0.6);
+        px[j] = 255 * k; px[j + 1] = 232 * k; px[j + 2] = 188 * k;
+      } else {
+        const gx = (t[y * nx + Math.min(nx - 1, xx + 1)] - t[y * nx + Math.max(0, xx - 1)]) * ppm / 2, gy = (t[Math.min(ny - 1, y + 1) * nx + xx] - t[Math.max(0, y - 1) * nx + xx]) * ppm / 2;
+        const k = 0.6 + 0.4 * clamp((0.45 * gx + 0.55 * gy + 0.7) / Math.hypot(gx, gy, 1), 0, 1);
+        px[j] = 246 * k; px[j + 1] = 243 * k; px[j + 2] = 236 * k;
+      }
+      px[j + 3] = 255 * a;
+    }
+    x.putImageData(im, 0, 0);
+    return c;
+  }
+  /* 底座、吊環的輪廓（平面座標，y 往下） */
+  function extrasPath(G, s, ox, oy) {
+    const p = new Path2D();
+    if (G.foot) { const f = G.foot; p.rect(ox + (G.W / 2 - f.w / 2) * s, oy + (G.H - f.sink) * s, f.w * s, f.h * s); }
+    if (G.loop) {
+      const R = tabRing(G, 64), pt = q => [ox + q[0] * s, oy + (G.H - q[1]) * s];
+      R.out.forEach((q, i) => { const [a, b] = pt(q); if (i) p.lineTo(a, b); else p.moveTo(a, b); }); p.closePath();
+      const [hx, hy] = pt([R.uc, R.vc]); p.moveTo(hx + G.loop.r * s, hy); p.arc(hx, hy, G.loop.r * s, 0, Math.PI * 2, true); p.closePath();
+    }
+    return p;
+  }
+  let meshMemo = null;
+  function meshNow() {
+    const key = JSON.stringify([O.L, O.bright, O.contrast, O.fade, crop, IMG && IMG.id]);
+    if (!meshMemo || meshMemo.key !== key) meshMemo = { key, M: lithoMesh(geom()) };
+    return meshMemo.M;
+  }
+  const litColor = G => { const k = Math.pow(Math.exp(-LT_ALPHA * (G.t1 - G.t0)), 0.6); return `rgb(${Math.round(255 * k)},${Math.round(232 * k)},${Math.round(188 * k)})`; };
+
+  /* ---------- 預覽 ---------- */
+  const cv = h("canvas", { class: "pvc", tabindex: "0", role: "img", "aria-label": "預覽：拖曳可移動照片" });
+  const stageEl = h("div", { class: "stage" }, cv);
+  let mode = isL() ? "lit" : "wood", rafId = 0, quickMode = false, last = null, lastWood = null;
+  const modesNow = () => (isL() ? [["lit", "開燈"], ["unlit", "關燈"], ["photo", "照片與範圍"]] : [["wood", "雕刻預覽"], ["photo", "照片與切割線"]]);
+  function schedule(q) { quickMode = !!q; if (rafId) return; rafId = requestAnimationFrame(() => { rafId = 0; drawPreview(); }); }
+  function stageSize(vw, vh) {
+    const cw = Math.max(100, stageEl.clientWidth - 16), ch = Math.max(100, stageEl.clientHeight - 16);
+    let w = cw, hh = w * vh / vw;
+    if (hh > ch) { hh = ch; w = hh * vw / vh; }
+    return { w: Math.round(w), h: Math.round(hh) };
+  }
+  /* 雕刻後的樣子：點的地方用燒焦的顏色，其他是木頭的顏色和紋路 */
+  function woodOf(G, dpi) {
+    const R = compute(G, dpi);
+    const full = maskOf(R.nx, R.ny, R.path, 0, G.hole ? [{ x: G.hole.x * R.ppm, y: G.hole.y * R.ppm, r: G.hole.r * R.ppm }] : null);
+    const wc = canvas(R.nx, R.ny), wx = wc.getContext("2d"), im = wx.createImageData(R.nx, R.ny), px = im.data;
+    let rows = 0;
+    for (let y = 0; y < R.ny; y++) {
+      let any = false;
+      for (let x = 0; x < R.nx; x++) {
+        const i = y * R.nx + x, j = i * 4;
+        if (!full[i]) { px[j + 3] = 0; continue; }
+        const grain = 9 * Math.sin(y / R.ppm * 0.9 + 2.2 * Math.sin(x / R.ppm * 0.11)) + 4 * Math.sin(y / R.ppm * 3.1);
+        if (R.bits[i]) { any = true; px[j] = 74 + grain * 0.3; px[j + 1] = 45 + grain * 0.2; px[j + 2] = 24; }
+        else { px[j] = 232 + grain; px[j + 1] = 203 + grain; px[j + 2] = 158 + grain * 0.8; }
+        px[j + 3] = 255;
+      }
+      if (any) rows++;
+    }
+    wx.putImageData(im, 0, 0);
+    return { wc, rowsFrac: rows / R.ny };
+  }
+  function drawPreview() {
+    if (!IMG || step !== 2) return;
+    const G = geom(), VB = G.vb || [0, 0, G.W, G.H], vw = VB[2] - VB[0], vh = VB[3] - VB[1], sz = stageSize(vw, vh), dpr = Math.min(2, devicePixelRatio || 1);
+    cv.style.width = sz.w + "px"; cv.style.height = sz.h + "px"; cv.width = Math.round(sz.w * dpr); cv.height = Math.round(sz.h * dpr);
+    const x = cv.getContext("2d"), s = cv.width / vw, ox = -VB[0] * s, oy = -VB[1] * s;
+    stageEl.classList.toggle("dark", mode === "lit");
+    x.clearRect(0, 0, cv.width, cv.height);
+    if (mode === "photo") {
+      const r = cropRect(G);
+      x.save(); x.translate(ox, oy);
+      x.imageSmoothingQuality = "high"; x.drawImage(IMG.c, r.sx, r.sy, r.sw, r.sh, 0, 0, G.W * s, G.H * s);
+      const p = shapePath(G, s), outside = new Path2D(); outside.rect(-ox, -oy, cv.width, cv.height); outside.addPath(p);
+      x.fillStyle = "rgba(240,236,228,.78)"; x.fill(outside, "evenodd");
+      x.lineWidth = Math.max(2, 2 * dpr); x.strokeStyle = "#e0301e"; x.stroke(p);
+      if (G.hole) { x.beginPath(); x.arc(G.hole.x * s, G.hole.y * s, G.hole.r * s, 0, Math.PI * 2); x.stroke(); }
+      if (G.foot || G.loop) { x.setLineDash([6 * dpr, 4 * dpr]); x.stroke(extrasPath(G, s, 0, 0)); x.setLineDash([]); }
+      x.restore();
+    } else if (G.litho) {
+      const lit = mode === "lit", c = lithoCanvas(G, Math.min(12, s) * (quickMode ? 0.4 : 1), lit);
+      x.save(); x.translate(ox, oy);
+      if (lit) { x.shadowColor = "rgba(255,214,150,.35)"; x.shadowBlur = 18 * dpr; }
+      else { x.shadowColor = "rgba(0,0,0,.28)"; x.shadowBlur = 10 * dpr; x.shadowOffsetY = 3 * dpr; }
+      x.imageSmoothingEnabled = true; x.imageSmoothingQuality = "high"; x.drawImage(c, 0, 0, G.W * s, G.H * s);
+      x.shadowColor = "transparent";
+      if (G.foot || G.loop) { x.fillStyle = lit ? litColor(G) : "#e6e1d6"; x.fill(extrasPath(G, s, 0, 0), "evenodd"); }
+      x.restore();
+    } else {
+      /* 預覽用和下載一樣的解析度（太大就降一點），拖曳時先用粗的 */
+      const dpi = quickMode ? Math.min(O.dpi, 110) : Math.min(O.dpi, 1400 / G.W * 25.4);
+      const Wd = woodOf(G, dpi); lastWood = Wd.wc; if (!quickMode) last = { rowsFrac: Wd.rowsFrac };
+      x.save(); x.shadowColor = "rgba(0,0,0,.28)"; x.shadowBlur = 10 * dpr; x.shadowOffsetY = 3 * dpr;
+      x.imageSmoothingEnabled = true; x.imageSmoothingQuality = "high"; x.drawImage(Wd.wc, 0, 0, cv.width, cv.height); x.restore();
+    }
+  }
+  function syncZoom() { const z = sheetEl.querySelector("input[data-zoom]"); if (z) z.value = String(Math.round(crop.z * 100)); }
+  function pan(dx, dy) { const G = geom(), r = cropRect(G), VB = G.vb || [0, 0, G.W, G.H], k = r.sw / ((parseFloat(cv.style.width) || 1) * G.W / (VB[2] - VB[0])); crop.cx -= dx * k; crop.cy -= dy * k; }
+  const ptrs = new Map(); let pinch = null, wheelT = 0;
+  const pdist = () => { const [a, b] = [...ptrs.values()]; return Math.hypot(a.x - b.x, a.y - b.y) || 1; };
+  cv.addEventListener("pointerdown", e => { cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (ptrs.size === 2) pinch = { d: pdist(), z: crop.z }; });
+  cv.addEventListener("pointermove", e => {
+    if (!ptrs.has(e.pointerId) || !IMG) return;
+    const p = ptrs.get(e.pointerId), dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
+    if (ptrs.size === 1) pan(dx, dy); else if (pinch) { crop.z = clamp(pinch.z * pdist() / pinch.d, 1, 6); syncZoom(); }
+    schedule(true);
+  });
+  const pend = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (!ptrs.size) schedule(false); };
+  cv.addEventListener("pointerup", pend); cv.addEventListener("pointercancel", pend);
+  cv.addEventListener("wheel", e => { if (!IMG) return; e.preventDefault(); crop.z = clamp(crop.z * Math.exp(-e.deltaY * 0.0015), 1, 6); syncZoom(); schedule(true); clearTimeout(wheelT); wheelT = setTimeout(() => schedule(false), 220); }, { passive: false });
+  cv.addEventListener("keydown", e => {
+    const mv = { ArrowLeft: [12, 0], ArrowRight: [-12, 0], ArrowUp: [0, 12], ArrowDown: [0, -12] }[e.key];
+    if (mv) { e.preventDefault(); pan(mv[0], mv[1]); schedule(false); }
+    else if (e.key === "+" || e.key === "=") { crop.z = clamp(crop.z * 1.1, 1, 6); syncZoom(); schedule(false); }
+    else if (e.key === "-") { crop.z = clamp(crop.z / 1.1, 1, 6); syncZoom(); schedule(false); }
+  });
+  if ("ResizeObserver" in window) new ResizeObserver(() => schedule(false)).observe(stageEl);
+  addEventListener("resize", () => { layoutEditor(); schedule(false); });
+
+  /* ---------- 檔案 ---------- */
+  const dPoly = (pts, ox, oy) => "M" + pts.map(([x, y]) => f2(x + ox) + " " + f2(y + oy)).join("L") + "Z";
+  const dCircle = (cx, cy, r) => `M${f2(cx - r)} ${f2(cy)}A${f2(r)} ${f2(r)} 0 1 0 ${f2(cx + r)} ${f2(cy)}A${f2(r)} ${f2(r)} 0 1 0 ${f2(cx - r)} ${f2(cy)}Z`;
+  /* 底座插槽：橫的；開了凸點就在上面那條長邊的中間加一個半圓，往槽裡凸 */
+  function slotD(x, y, L, w, d) {
+    if (!d) return `M${f2(x)} ${f2(y)}H${f2(x + L)}V${f2(y + w)}H${f2(x)}Z`;
+    const r = d / 2, xm = x + L / 2;
+    return `M${f2(x)} ${f2(y)}H${f2(xm - r)}A${f2(r)} ${f2(r)} 0 0 0 ${f2(xm + r)} ${f2(y)}H${f2(x + L)}V${f2(y + w)}H${f2(x)}Z`;
+  }
+  function cutPaths(G, m) {
+    const out = [];
+    out.push(O.shape === "circle" && O.kind !== "stand" ? dCircle(m + G.W / 2, m + G.H / 2, G.W / 2) : dPoly(G.full, m, m));
+    if (G.hole) out.push(dCircle(m + G.hole.x, m + G.hole.y, G.hole.r));
+    let W = G.W + 2 * m, H = G.Hfull + 2 * m;
+    if (G.base) {
+      const B = G.base, bx = m + G.W + 4, by = m;
+      out.push(dPoly(B.outline, bx, by), slotD(bx + (B.W - B.slotL) / 2, by + B.D / 2 - B.slotW / 2, B.slotL, B.slotW, B.bump));
+      W = bx + B.W + m; H = Math.max(H, by + B.D + m);
+    }
+    return { out, W, H };
+  }
+  function exportCanvas(G) {
+    const R = compute(G, O.dpi), c = canvas(R.nx, R.ny), x = c.getContext("2d"), im = x.createImageData(R.nx, R.ny), px = im.data;
+    for (let i = 0; i < R.nx * R.ny; i++) {
+      let val;
+      if (O.style === "gray") val = R.ring && R.ring[i] ? 0 : R.inner[i] ? Math.round(clamp(R.v[i], 0, 1) * 255) : 255;
+      else val = R.bits[i] ? 0 : 255;
+      px[i * 4] = px[i * 4 + 1] = px[i * 4 + 2] = val; px[i * 4 + 3] = 255;
+    }
+    x.putImageData(im, 0, 0);
+    return c;
+  }
+  function buildSVG(G, png) {
+    const m = 2, C = cutPaths(G, m);
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${f2(C.W)}mm" height="${f2(C.H)}mm" viewBox="0 0 ${f2(C.W)} ${f2(C.H)}">\n` +
+      `<image x="${m}" y="${m}" width="${f2(G.W)}" height="${f2(G.H)}" preserveAspectRatio="none" style="image-rendering:pixelated" xlink:href="${png}"/>\n` +
+      `<g fill="none" stroke="#FF0000" stroke-width="0.1">${C.out.map(d => `<path d="${d}"/>`).join("")}</g>\n</svg>\n`;
+  }
+  function stamp() { const d = new Date(), p = n => String(n).padStart(2, "0"); return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`; }
+  function fileName(ext) {
+    const who = (nameIn.value || "").trim().replace(/[\\/:*?"<>|\s]+/g, "").slice(0, 12);
+    const p = P();
+    return `${isL() ? "照片透光片" : "照片雷雕"}_${who ? who + "_" : ""}${SHAPES[p.shape]}${p.size}mm_${(isL() ? LKIND_FULL : KINDS)[p.kind]}_${stamp()}.${ext}`;
+  }
+  function download(name, blob) {
+    const url = URL.createObjectURL(blob), a = h("a", { href: url, download: name, style: "display:none" });
+    document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 4000);
+  }
+  let busy = false;
+  function doDownload(kind) {
+    if (busy || !IMG) return; busy = true; say(dlMsg, "正在產生檔案…");
+    setTimeout(() => {
+      try {
+        const G = geom();
+        if (kind === "stl") {
+          const n = fileName("stl"); download(n, new Blob([stlBuffer(meshNow())], { type: "model/stl" })); busy = false;
+          say(dlMsg, "已下載：" + n + "。請交由老師列印。" + (isPhone ? "（iPhone：「檔案」App 的「下載項目」；Android：「下載」資料夾）" : ""));
+          return;
+        }
+        const c = exportCanvas(G);
+        if (kind === "png") c.toBlob(b => { busy = false; if (!b) return say(dlMsg, "產生檔案時發生問題，請再試一次。", true); const n = fileName("png"); download(n, b); say(dlMsg, "已下載：" + n); }, "image/png");
+        else { const n = fileName("svg"); download(n, new Blob([buildSVG(G, c.toDataURL("image/png"))], { type: "image/svg+xml" })); busy = false; say(dlMsg, "已下載：" + n + "。請交由老師處理。" + (isPhone ? "（iPhone：「檔案」App 的「下載項目」；Android：「下載」資料夾）" : "")); }
+      } catch (e) { busy = false; say(dlMsg, "產生檔案時發生問題：" + e.message, true); }
+    }, 30);
+  }
+  function estimate(G) {
+    const rows = (last ? last.rowsFrac : 1) * G.H * O.dpi / 25.4, eng = rows * (G.W / 150 + 0.08);
+    const per = (pts, closed) => { let s = 0; for (let i = 0; i < pts.length - (closed ? 0 : 1); i++) { const a = pts[i], b = pts[(i + 1) % pts.length]; s += Math.hypot(b[0] - a[0], b[1] - a[1]); } return s; };
+    let cut = per(G.full, true) + (G.hole ? 2 * Math.PI * G.hole.r : 0);
+    if (G.base) cut += per(G.base.outline, true) + 2 * (G.base.slotL + G.base.slotW);
+    return Math.max(1, Math.round((eng + cut / 6 + 15) / 60 * 10) / 10);
+  }
+
+  /* ---------- 畫面 ---------- */
+  const LOGO = `<svg viewBox="0 0 100 100" width="36" height="36" aria-hidden="true"><rect width="100" height="100" rx="22" fill="#e2803d"/><rect x="48.7" y="25" width="2.6" height="14" rx="1" fill="#16324a"/><path d="M50 10.5 L53 18 L60.5 21 L53 24 L50 31.5 L47 24 L39.5 21 L47 18 Z" fill="#fffaf0"/><rect x="14.5" y="55" width="7.5" height="16" rx="3.5" fill="#16324a"/><rect x="78" y="55" width="7.5" height="16" rx="3.5" fill="#16324a"/><rect x="21" y="38" width="58" height="50" rx="14" fill="#16324a"/><rect x="28" y="46" width="44" height="28" rx="9" fill="#f6f1e7"/><circle cx="41" cy="58" r="4.8" fill="#16324a"/><circle cx="59" cy="58" r="4.8" fill="#16324a"/><path d="M43.5 65.5 Q50 70.5 56.5 65.5" fill="none" stroke="#16324a" stroke-width="2.8" stroke-linecap="round"/><rect x="33" y="78" width="34" height="2.6" rx="1.3" fill="#e2803d"/><rect x="38" y="82" width="24" height="2.6" rx="1.3" fill="#e2803d"/></svg>`;
+  const root = document.getElementById("app");
+  const say = (el, text, bad) => { el.textContent = text; el.className = bad ? "msg bad" : "msg"; };
+  let step = 1;
+  const mq = q => (window.matchMedia ? matchMedia(q) : { matches: false });
+  const MQ_WIDE = mq("(min-width: 760px)"), MQ_TOUCH = mq("(max-width: 759px), (any-pointer: coarse)");
+  /* 又矮又寬（手機橫放、筆電放大 200%）：工具列放到預覽右邊，調整視窗放右側 */
+  const MQ_SHORT = mq("(max-height: 500px) and (min-width: 600px)"), side = () => MQ_WIDE.matches || MQ_SHORT.matches;
+  const reduced = () => mq("(prefers-reduced-motion: reduce)").matches;
+  const inApp = /\bLine\//i.test(navigator.userAgent) || /FBAN|FBAV|Instagram/i.test(navigator.userAgent);
+  const isPhone = mq("(pointer: coarse)").matches;
+  const seg = (label, items, get, set) => {
+    const el = h("div", { class: "seg", role: "group", "aria-label": label });
+    el.redraw = () => el.replaceChildren(...items().map(([v, t]) => h("button", { type: "button", "aria-pressed": String(get() === v), onclick: () => { set(v); el.redraw(); } }, t)));
+    el.redraw(); return el;
+  };
+  const changed = () => { save(); schedule(false); };
+  const srow = (label, ...kids) => h("div", { class: "srow" }, h("b", null, label), h("div", { class: "sval" }, ...kids));
+  function slider(label, key) {
+    const out = h("output", null, String(O[key]));
+    const inp = h("input", { type: "range", min: "0", max: "100", step: "1", value: String(O[key]), "aria-label": label,
+      oninput: e => { O[key] = +e.target.value; out.textContent = O[key]; schedule(true); }, onchange: () => { save(); schedule(false); } });
+    return srow(label, h("div", { class: "range" }, inp, out));
+  }
+  const check = (label, key) => h("label", { class: "check" }, h("input", { type: "checkbox", checked: O[key], onchange: e => { O[key] = e.target.checked; changed(); } }), label);
+  const checkP = (label, key) => h("label", { class: "check" }, h("input", { type: "checkbox", checked: P()[key], onchange: e => { P()[key] = e.target.checked; changed(); } }), label);
+  const needSupport = () => isL() && !["curve", "stand"].includes(O.L.kind) && ["circle", "heart"].includes(O.L.shape);
+  /* 切換製作方式：兩邊的款式各自記住 */
+  function setOut(v) {
+    if (O.out === v) return;
+    O.out = v; save();
+    if (!modesNow().some(m => m[0] === mode)) mode = modesNow()[0][0];
+    modeSeg.redraw(); applyOut();
+    if (sheet) renderSheet();
+    schedule(false); requestAnimationFrame(layoutEditor);
+  }
+  const TOOLS = [["pos", "位置"], ["style", "款式"], ["tone", "明暗"]];
+
+  /* ---------- 跳出來的視窗：手機從下面出來，可以往下滑關掉；電腦、平板在右邊或中間，按「關閉」 ---------- */
+  const sheetEl = h("div", { class: "sheet", role: "dialog", hidden: true });
+  const scrim = h("div", { class: "scrim", hidden: true, onclick: () => closeSheet() });
+  let sheet = null, sheetPushed = false, sheetFocus = null;
+  function openSheet(kind, tab) {
+    const first = !sheet;
+    if (first) { sheetFocus = document.activeElement; try { history.pushState({ photoLayer: "sheet" }, ""); sheetPushed = true; } catch (e) { sheetPushed = false; } }
+    sheet = { kind, tab: tab || null };
+    const adjust = kind === "adjust";  /* 調整的視窗不蓋住預覽：手機在下面、電腦在右邊，預覽照樣可以拖曳 */
+    sheetEl.classList.toggle("side", adjust); sheetEl.classList.toggle("swipe", MQ_TOUCH.matches);
+    sheetEl.setAttribute("aria-modal", adjust ? "false" : "true");
+    document.body.classList.add("sheet-open"); document.body.classList.toggle("sheet-adjust", adjust);
+    scrim.hidden = adjust;
+    renderSheet(); sheetEl.hidden = false;
+    if (first && !reduced()) { sheetEl.classList.remove("enter"); void sheetEl.offsetWidth; sheetEl.classList.add("enter"); }
+    toolbarRedraw();
+    requestAnimationFrame(() => { layoutEditor(); if (first) { const c = sheetEl.querySelector("[data-close]"); if (c) c.focus({ preventScroll: true }); } });
+  }
+  function closeSheet(fromPop) {
+    if (!sheet) return;
+    sheet = null; sheetEl.hidden = true; scrim.hidden = true;
+    sheetEl.classList.remove("enter"); sheetEl.style.translate = ""; sheetEl.style.transition = "";
+    document.body.classList.remove("sheet-open", "sheet-adjust");
+    toolbarRedraw(); requestAnimationFrame(layoutEditor);
+    if (!fromPop && sheetPushed) { sheetPushed = false; history.back(); } else sheetPushed = false;
+    if (sheetFocus && document.contains(sheetFocus) && !sheetFocus.closest("[hidden]")) sheetFocus.focus({ preventScroll: true });
+  }
+  function renderSheet() {
+    if (!sheet) return;
+    const closeBtn = h("button", { type: "button", class: "btn soft", "data-close": "", onclick: () => closeSheet() }, "關閉");
+    let head, body, label;
+    if (sheet.kind === "adjust") {
+      if (!sheet.tab) sheet.tab = "pos";
+      label = "調整：" + TOOLS.find(t => t[0] === sheet.tab)[1];
+      head = h("div", { class: "sheet-head" }, seg("設定項目", () => TOOLS, () => sheet.tab, v => { sheet.tab = v; renderSheet(); toolbarRedraw(); requestAnimationFrame(layoutEditor); }), closeBtn);
+      body = TOOL_BODY[sheet.tab]();
+    } else {
+      const [title, make] = INFO[sheet.kind]; label = title;
+      head = h("div", { class: "sheet-head" }, h("h2", null, title), closeBtn);
+      body = make();
+    }
+    sheetEl.setAttribute("aria-label", label); sheetEl.dataset.kind = sheet.kind;
+    sheetEl.replaceChildren(head, h("div", { class: "sheet-body" }, ...body));
+  }
+  const TOOL_BODY = {
+    pos: () => [
+      srow("縮放", h("div", { class: "range" }, h("input", { type: "range", min: "100", max: "600", step: "1", value: String(Math.round(crop.z * 100)), "data-zoom": "", "aria-label": "縮放",
+        oninput: e => { crop.z = +e.target.value / 100; schedule(true); }, onchange: () => schedule(false) }))),
+      srow("旋轉", h("button", { type: "button", class: "btn", onclick: rotateImage }, "旋轉 90°")),
+      h("p", { class: "note" }, "在預覽畫面上拖曳可移動照片；兩指或滑鼠滾輪可縮放。")],
+    style: () => [
+      srow("類型", seg("類型", () => Object.entries(kindsNow()), () => P().kind, v => { const q = P(); q.kind = v; if (!shapesFor(v).includes(q.shape)) q.shape = shapesFor(v)[0]; changed(); renderSheet(); requestAnimationFrame(layoutEditor); })),
+      srow("形狀", seg("形狀", () => shapesFor(P().kind).map(k => [k, SHAPES[k]]), () => P().shape, v => { P().shape = v; changed(); renderSheet(); requestAnimationFrame(layoutEditor); })),
+      P().shape === "rect" ? srow("方向", seg("方向", () => [["portrait", "直式"], ["landscape", "橫式"]], () => P().orient, v => { P().orient = v; changed(); })) : null,
+      srow(["寬度", h("small", null, "mm")], seg("寬度（mm）", () => sizesNow().map(n => [n, String(n)]), () => P().size, v => { P().size = v; changed(); })),
+      isL() ? h("p", { class: "note" }, { curve: "彎成 90° 弧形，可自己站立。", stand: "下方附底座，可立在桌上。", charm: "上方附吊環，可掛在窗邊。", plain: "只有透光片，可放在燈箱上。" }[O.L.kind] + (needSupport() ? "圓形、愛心的底部不是平的，列印時需加支撐。" : "")) : null],
+    tone: () => [slider("亮度", "bright"), slider("對比", "contrast"), check("邊緣淡化（背景雜亂時使用）", "fade"), checkP(isL() ? "加上外框（較堅固）" : "加上外框", "frame")],
+  };
+  const INFO = {
+    beam: ["Beam Studio 設定", () => {
+      const res = O.dpi === 500 ? "高（500 DPI）" : "中（250 DPI）";
+      return [h("ol", { class: "list" }, ...[
+        "將下載的 SVG 拖入 Beam Studio，匯入方式選擇「依顏色」分層。",
+        `選單「編輯 → 文件設定」，雕刻解析度選擇「${res}」。`,
+        O.style === "gray" ? "點選照片，開啟「漸層」（由 Beam Studio 轉換為點陣）。" : "點選照片，關閉「漸層」（點陣已轉換完成）。",
+        "照片圖層使用「木板 - 雕刻」參數，紅線圖層使用「木板 - 3mm 切割」參數；雕刻圖層置於切割圖層上方，先雕刻再切割。",
+        "首次使用時，先雕刻一片 40 mm 試片：顏色過深時調高亮度，或在 Beam Studio 提高速度。",
+      ].map(t => h("li", null, t)))];
+    }],
+    print: ["列印設定", () => [h("ol", { class: "list" }, ...[
+      "將 STL 匯入切片軟體，保持檔案原本的方向：直立、圖案面朝前、底邊貼平台。",
+      "使用白色 PLA；層高 0.12 mm；填充 100%。",
+      O.L.kind === "stand" ? "已附底座，不需支撐或邊緣（Brim）。" : needSupport() ? "圓形、愛心的底部不是平的：請加支撐（建議樹狀支撐）和 5 mm 的邊緣（Brim）。" : "加上 5 mm 的邊緣（Brim），避免列印途中倒下；不需支撐。",
+      "外牆速度放慢（約 40 mm/s），表面紋路較少。",
+      "列印時間以切片軟體顯示為準；第一次列印請記錄時間與效果。",
+      "完成後放在燈前觀看，例如手機手電筒或 LED 燈；避免使用會發熱的燈泡。",
+    ].map(t => h("li", null, t)))]],
+    advanced: ["進階設定", () => {
+      if (isL()) return [
+        srow("厚度", seg("厚度範圍", () => [["std", "0.8–3.0 mm（建議）"], ["thin", "0.6–2.4 mm（較快）"]], () => O.L.thick, v => { O.L.thick = v; save(); refreshSummary(); renderSheet(); })),
+        h("p", { class: "note" }, "較薄的透光片整體較亮、列印較快，但較容易斷裂。"),
+        h("div", { class: "row" }, h("button", { type: "button", class: "btn", onclick: () => { O.L.thick = LDEF.thick; O.L.frame = LDEF.frame; save(); refreshSummary(); renderSheet(); } }, "恢復預設值"))];
+      const G = geom(), M = machine();
+      const set = (k, v) => { O[k] = v; save(); refreshSummary(); renderSheet(); };
+      return [
+        srow("點陣", seg("點陣方式", () => Object.entries(STYLES), () => O.style, v => set("style", v))),
+        srow("解析度", seg("解析度", () => [[250, "250 DPI（建議）"], [500, "500 DPI（較精細）"]], () => O.dpi, v => set("dpi", v))),
+        srow("板厚", seg("板厚", () => [[3, "3 mm"], [5, "5 mm"]], () => O.board, v => set("board", v))),
+        h("p", { class: "note" }, O.kind === "stand"
+          ? `底座插槽寬 ${f2(G.base.slotW)} mm${G.base.bump ? `，含 ${f2(G.base.bump)} mm 凸點` : ""}（${M.found ? `取自課程工具箱「機器設定」：${M.name}` : "尚未設定機器，使用預設值"}）。`
+          : "板厚用於立牌的插腳與底座；底座插槽寬度取自課程工具箱的「機器設定」。"),
+        h("div", { class: "row" },
+          h("button", { type: "button", class: "btn", onclick: () => doDownload("png") }, "下載圖片（PNG）"),
+          h("button", { type: "button", class: "btn", onclick: () => { Object.assign(O, { bright: DEF.bright, contrast: DEF.contrast, fade: DEF.fade, frame: DEF.frame, style: DEF.style, dpi: DEF.dpi, board: DEF.board }); save(); refreshSummary(); renderSheet(); } }, "恢復預設值")),
+        h("p", { class: "note" }, "PNG 匯入 Beam Studio 後，需自行設定實際尺寸。")];
+    }],
+    help: ["使用說明", () => helpBody()],
+  };
+  /* 往下滑關掉：和按「關閉」一樣；手指先往哪邊動就算哪邊，橫的不算；裡面捲到一半時往下是捲動 */
+  let drag = null;
+  sheetEl.addEventListener("touchstart", e => {
+    if (!sheetEl.classList.contains("swipe") || e.touches.length !== 1 || e.target.closest("input, textarea, select")) return;
+    for (let q = e.target; q; q = q.parentElement) { if (q.scrollTop > 0) return; if (q === sheetEl) break; }
+    drag = { x0: e.touches[0].clientX, y0: e.touches[0].clientY, t0: Date.now(), dy: 0, lock: 0 };
+  }, { passive: true });
+  sheetEl.addEventListener("touchmove", e => {
+    if (!drag) return;
+    if (e.touches.length !== 1) { dragReset(); drag = null; return; }
+    const mx = e.touches[0].clientX - drag.x0, my = e.touches[0].clientY - drag.y0;
+    if (!drag.lock) { if (Math.abs(mx) < 8 && Math.abs(my) < 8) return; drag.lock = my > Math.abs(mx) ? 1 : -1; }
+    if (drag.lock < 0) return;
+    drag.dy = Math.max(0, my - 8); sheetEl.style.transition = "none"; sheetEl.style.translate = `0 ${drag.dy}px`;
+  }, { passive: true });
+  function dragReset() { sheetEl.style.transition = "translate .2s ease-out"; sheetEl.style.translate = ""; }
+  function dragEnd() {
+    if (!drag) return; const d = drag; drag = null; if (d.lock <= 0) return;
+    const fast = d.dy > 40 && d.dy / (Date.now() - d.t0) > 0.5;
+    if (d.dy > Math.min(120, sheetEl.offsetHeight * 0.3) || fast) {
+      if (reduced()) { closeSheet(); return; }
+      sheetEl.style.transition = "translate .18s ease-out"; sheetEl.style.translate = `0 ${Math.max(innerWidth, innerHeight)}px`;
+      setTimeout(() => closeSheet(), 160);
+    } else dragReset();
+  }
+  sheetEl.addEventListener("touchend", dragEnd); sheetEl.addEventListener("touchcancel", dragEnd);
+  addEventListener("keydown", e => { if (e.key !== "Escape") return; if (camOpen) closeCam(); else if (sheet) closeSheet(); });
+  addEventListener("popstate", () => { if (camOpen) closeCam(true); else if (sheet) closeSheet(true); });
+
+  /* ---------- 第 1 步：照片 ---------- */
+  const fileIn = h("input", { type: "file", accept: "image/*", hidden: true, onchange: e => { loadFile(e.target.files[0]); e.target.value = ""; } });
+  const startMsg = h("p", { class: "msg", role: "status" });
+  const footSlot = h("div");
+  const outSeg1 = seg("製作方式", () => Object.entries(OUTS), () => O.out, v => setOut(v));
+  const leadP = h("p", { class: "lead" });
+  const testBox = h("section", { class: "box" }, h("h3", null, "試刻卡"),
+    h("p", null, "更換木板時，先雕刻試刻卡（10 階灰階），確認深淺後再調整照片亮度。"),
+    h("div", { class: "row" }, h("button", { type: "button", class: "btn", onclick: testCard }, "產生試刻卡")));
+  const lithoBox = h("section", { class: "box" }, h("h3", null, "透光片的原理"),
+    h("p", null, "照片暗的地方印得厚、亮的地方印得薄。平常看只有淡淡的起伏，放在燈前，光透過來就會出現照片。建議使用白色 PLA。"));
+  const s1 = h("section", { class: "start" },
+    inApp ? h("p", { class: "warn" }, "目前在 LINE 或 Facebook 的內建瀏覽器中開啟，可能無法拍照或下載。請由右上角選單改用 Chrome 或 Safari 開啟。") : null,
+    h("div", { class: "outrow" }, h("b", null, "製作方式"), outSeg1),
+    leadP,
+    h("div", { class: "row big" },
+      h("button", { type: "button", class: "btn primary bigbtn", onclick: openCamera }, "拍攝照片"),
+      h("button", { type: "button", class: "btn bigbtn", onclick: () => fileIn.click() }, "選擇照片")),
+    fileIn, startMsg,
+    h("section", { class: "box" }, h("h3", null, "拍攝建議"),
+      h("ul", { class: "list" }, h("li", null, "臉部約占畫面一半。"), h("li", null, "背景單純，以白牆為佳。"), h("li", null, "光線充足，避免背光。"))),
+    testBox, lithoBox,
+    footSlot);
+
+  /* ---------- 第 2 步：調整（預覽占滿畫面，設定在跳出來的視窗） ---------- */
+  const modeSeg = seg("預覽方式", modesNow, () => mode, v => { mode = v; schedule(false); });
+  const toolbar = h("div", { class: "toolbar" });
+  function toolbarRedraw() {
+    const on = v => !!(sheet && sheet.kind === "adjust" && sheet.tab === v);
+    toolbar.replaceChildren(
+      ...TOOLS.map(([v, t]) => h("button", { type: "button", class: "btn tool", "aria-pressed": String(on(v)), onclick: () => (on(v) ? closeSheet() : openSheet("adjust", v)) }, t)),
+      h("button", { type: "button", class: "btn primary", onclick: () => go(3) }, "下一步 ›"));
+  }
+  const s2 = h("section", { class: "editor" }, h("div", { class: "ed-modes" }, modeSeg), stageEl, toolbar);
+  /* 預覽的高度＝畫面剩下的高度；手機打開設定時，預覽縮到設定視窗上面 */
+  function layoutEditor() {
+    if (step !== 2) return;
+    const top = stageEl.getBoundingClientRect().top, adj = sheet && sheet.kind === "adjust", short = MQ_SHORT.matches;
+    const reserve = !side() && adj ? sheetEl.offsetHeight + 10 : short ? 16 : toolbar.offsetHeight + 16;
+    const hh = innerHeight - top - reserve;
+    const min = short ? 120 : MQ_WIDE.matches ? 260 : 140;
+    let px = Math.round(MQ_WIDE.matches ? clamp(hh, min, 720) : Math.max(min, hh));
+    stageEl.style.height = px + "px";
+    const over = document.documentElement.scrollHeight - innerHeight;
+    if (over > 0 && px > min) { px = Math.max(min, px - over); stageEl.style.height = px + "px"; }
+  }
+
+  /* ---------- 第 3 步：下載 ---------- */
+  const facts = h("dl", { class: "facts" }), thumb = h("div", { class: "thumb" }), dlMsg = h("p", { class: "msg", role: "status" });
+  const nameIn = h("input", { type: "text", id: "who", maxlength: "12", placeholder: "姓名或座號", autocomplete: "off" });
+  const dlBtn = h("button", { type: "button", class: "btn primary bigbtn", onclick: () => doDownload(isL() ? "stl" : "svg") });
+  const infoBtn = h("button", { type: "button", class: "btn", onclick: () => openSheet(isL() ? "print" : "beam") });
+  const s3 = h("section", { class: "dl" },
+    h("div", { class: "grp" }, h("label", { for: "who" }, h("b", null, "檔名標註（選填）")), nameIn),
+    h("div", { class: "row" }, dlBtn),
+    dlMsg,
+    h("div", { class: "row" },
+      infoBtn,
+      h("button", { type: "button", class: "btn", onclick: () => openSheet("advanced") }, "進階設定")),
+    h("section", { class: "box out" }, h("h3", null, "輸出內容"), h("div", { class: "out-in" }, thumb, facts)));
+  function refreshSummary() {
+    if (!IMG || step !== 3) return;
+    if (isL()) return refreshSummaryL();
+    const G = geom(), Wd = woodOf(G, Math.min(O.dpi, 900 / G.W * 25.4)); lastWood = Wd.wc; last = { rowsFrac: Wd.rowsFrac };
+    const min = estimate(G), size = O.kind === "stand" ? `立牌 ${mm1(G.W)} × ${mm1(G.Hfull)} mm＋底座 ${G.base.W} × ${G.base.D} mm` : `${mm1(G.W)} × ${mm1(G.H)} mm`;
+    facts.replaceChildren(
+      h("dt", null, "類型"), h("dd", null, `${SHAPES[O.shape]}${KINDS[O.kind]}${G.hole ? "（含吊孔）" : ""}`),
+      h("dt", null, "尺寸"), h("dd", null, size),
+      h("dt", null, "預估時間"), h("dd", null, `約 ${min} 分鐘（雕刻與切割，粗估）`),
+      h("dt", null, "12 人合計"), h("dd", null, `約 ${Math.round(min * 12)} 分鐘`));
+    const C = cutPaths(G, 2), wood = lastWood.toDataURL("image/png");
+    thumb.replaceChildren(svgEl(`<svg viewBox="0 0 ${f2(C.W)} ${f2(C.H)}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="輸出內容縮圖"><path d="${C.out[0]}${G.hole ? C.out[1] : ""}" fill="#ead2a8" fill-rule="evenodd" stroke="none"/>${G.base ? `<path d="${C.out[C.out.length - 2]}" fill="#ead2a8" stroke="none"/>` : ""}<image x="2" y="2" width="${f2(G.W)}" height="${f2(G.H)}" preserveAspectRatio="none" href="${wood}"/><g fill="none" stroke="#e0301e" stroke-width="0.5">${C.out.map(d => `<path d="${d}"/>`).join("")}</g></svg>`));
+  }
+
+  /* 透光片：尺寸、材料都用實際產生的檔案算 */
+  function refreshSummaryL() {
+    const G = geom(), S = meshStats(meshNow()), g = S.vol / 1000 * PLA_DENSITY;
+    facts.replaceChildren(
+      h("dt", null, "類型"), h("dd", null, `${SHAPES[G.shape]}${LKIND_FULL[G.kind]}${G.curve ? "（彎成 90°）" : ""}${needSupport() ? "，列印需加支撐" : ""}`),
+      h("dt", null, "尺寸"), h("dd", null, `寬 ${mm1(S.size[0])} × 高 ${mm1(S.size[2])} × 深 ${mm1(S.size[1])} mm`),
+      h("dt", null, "厚度"), h("dd", null, `${G.t0.toFixed(1)}–${G.t1.toFixed(1)} mm${G.fw ? `，外框 ${G.t1.toFixed(1)} mm` : ""}`),
+      h("dt", null, "材料"), h("dd", null, `約 ${Math.max(1, Math.round(g))} g（白色 PLA）`),
+      h("dt", null, "檔案"), h("dd", null, `STL，約 ${(S.bytes / 1048576).toFixed(1)} MB`));
+    const VB = G.vb, vw = VB[2] - VB[0], vh = VB[3] - VB[1], k = Math.min(720 / vw, 360 / vh), c = canvas(vw * k + 24, vh * k + 24), x = c.getContext("2d");
+    x.fillStyle = "#15120e"; x.fillRect(0, 0, c.width, c.height);
+    x.translate(12 - VB[0] * k, 12 - VB[1] * k);
+    x.imageSmoothingEnabled = true; x.imageSmoothingQuality = "high"; x.drawImage(lithoCanvas(G, Math.min(10, k), true), 0, 0, G.W * k, G.H * k);
+    if (G.foot || G.loop) { x.fillStyle = litColor(G); x.fill(extrasPath(G, k, 0, 0), "evenodd"); }
+    c.setAttribute("role", "img"); c.setAttribute("aria-label", "開燈時的樣子");
+    thumb.replaceChildren(c);
+  }
+  function applyOut() {
+    const L = isL();
+    brandName.textContent = "創客小幫手"; brandSub.textContent = L ? "照片・3D 透光片（STL）" : "照片・雷射雕刻（SVG）";
+    document.title = (L ? "照片透光片" : "照片雷雕") + "｜創客小幫手";
+    leadP.textContent = L ? "拍攝或選擇一張照片。系統會依照片明暗產生厚薄不同的透光片，並產生 3D 列印用的 STL 檔；放在燈前即可看見照片。"
+      : "拍攝或選擇一張照片。系統會依選擇的形狀裁切，轉換為雷射雕刻用的點陣圖，並產生 SVG 檔。";
+    testBox.hidden = L; lithoBox.hidden = !L;
+    dlBtn.textContent = L ? "下載 STL" : "下載 SVG"; infoBtn.textContent = L ? "列印設定" : "Beam Studio 設定";
+    outSeg1.redraw(); say(dlMsg, "");
+    if (step === 3) refreshSummary();
+  }
+
+  /* ---------- 步驟、頁尾 ---------- */
+  const stepNav = h("nav", { class: "pt-steps", "aria-label": "步驟" });
+  const stepHint = h("p", { class: "note stephint", role: "status" });
+  function drawSteps() {
+    stepNav.replaceChildren(...[[1, "照片"], [2, "調整"], [3, "下載"]].map(([n, t]) => h("button", {
+      type: "button", "aria-current": step === n ? "step" : null, "aria-disabled": n > 1 && !IMG ? "true" : null,
+      onclick: () => { if (n > 1 && !IMG) { stepHint.textContent = "請先拍攝或選擇照片。"; return; } stepHint.textContent = ""; go(n); }
+    }, h("i", null, n), t)));
+  }
+  function go(n) {
+    if (sheet) closeSheet();
+    step = n; document.body.dataset.step = String(n);
+    s1.hidden = n !== 1; s2.hidden = n !== 2; s3.hidden = n !== 3;
+    drawSteps(); scrollTo(0, 0);
+    if (n === 2) requestAnimationFrame(() => { layoutEditor(); schedule(false); });
+    if (n === 3) refreshSummary();
+  }
+  function foot() {
+    const dark = (themeGet() || (mq("(prefers-color-scheme: light)").matches ? "light" : "dark")) === "dark";
+    return h("footer", { class: "foot" },
+      h("span", null, "照片僅在本機處理，不會上傳或儲存。"),
+      h("span", null, `v${VERSION} 試用版・© 2026 Ken Chen・問題回報：LINE 聯絡陳老師`),
+      h("div", null, h("button", { type: "button", class: "chip", onclick: () => { themeSet(dark ? "light" : "dark"); applyTheme(); footSlot.replaceChildren(foot()); schedule(false); } }, dark ? "切換為大地色" : "切換為深色")));
+  }
+
+  /* ---------- 拍攝照片 ---------- */
+  let camOpen = false, closeCam = () => {};
+  async function openCamera() {
+    if (camOpen) return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { say(startMsg, "此瀏覽器無法直接使用鏡頭，請改用「選擇照片」。", true); return; }
+    let facing = "user", stream = null;
+    const video = h("video", { autoplay: true, playsinline: true, muted: true }), camMsg = h("p", { class: "msg", role: "status" });
+    const start = async () => {
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
+      video.srcObject = stream; video.classList.toggle("mirror", facing === "user");
+    };
+    try { await start(); } catch (e) { say(startMsg, "無法開啟鏡頭。請允許使用鏡頭，或改用「選擇照片」；若在 LINE 內開啟，請改用 Chrome 或 Safari。", true); return; }
+    camOpen = true;
+    let pushed = false; try { history.pushState({ photoLayer: "cam" }, ""); pushed = true; } catch (e) { pushed = false; }
+    const last0 = document.activeElement;
+    closeCam = fromPop => {
+      if (!camOpen) return; camOpen = false;
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      layer.remove(); if (!fromPop && pushed) history.back();
+      if (last0 && last0.focus && document.contains(last0)) last0.focus();
+    };
+    const shoot = () => {
+      if (!video.videoWidth) { say(camMsg, "鏡頭尚未就緒，請稍候再試。", true); return; }
+      const c = canvas(video.videoWidth, video.videoHeight); c.getContext("2d").drawImage(video, 0, 0);
+      closeCam(); setImage(c, c.width, c.height, false);
+    };
+    const switchCam = async () => { facing = facing === "user" ? "environment" : "user"; try { await start(); } catch (e) { say(camMsg, "沒有其他鏡頭。", true); facing = "user"; try { await start(); } catch (e2) { /* 原本的鏡頭也無法開啟 */ } } };
+    const layer = h("div", { class: "cam", role: "dialog", "aria-modal": "true", "aria-label": "拍攝照片" },
+      h("div", { class: "cam-bar" }, h("b", null, "拍攝照片"), h("button", { type: "button", class: "hbtn", onclick: () => closeCam() }, "取消")),
+      h("div", { class: "cam-v" }, video),
+      h("div", { class: "cam-foot" }, camMsg,
+        h("div", { class: "row" }, h("button", { type: "button", class: "hbtn", onclick: switchCam }, "切換鏡頭"), h("button", { type: "button", class: "btn primary bigbtn shutter", onclick: shoot }, "拍攝"))));
+    document.body.append(layer);
+    layer.querySelector(".shutter").focus();
+  }
+
+  /* ---------- 使用說明 ---------- */
+  const HELP_L = [
+    ["選擇照片", "「拍攝照片」使用 Chromebook 或手機的鏡頭；「選擇照片」從裝置中選取。臉部清楚、背景單純的照片效果最好。"],
+    ["調整位置", "在預覽畫面上拖曳可移動照片；兩指、滑鼠滾輪或「位置」中的縮放可調整大小。切換為「照片與範圍」可確認列印範圍。"],
+    ["開燈與關燈", "「開燈」顯示放在燈前的樣子；「關燈」顯示平常的樣子，只看得到淡淡的起伏。臉部過暗時，在「明暗」中調高亮度。"],
+    ["款式", "弧形立牌彎成弧形，可自己站立；立牌附底座；吊飾附吊環，可掛在窗邊。"],
+    ["下載", "在「下載」步驟按「下載 STL」，交由老師以切片軟體列印。建議的設定請見下載頁的「列印設定」。"],
+  ];
+  const HELP = [
+    ["選擇照片", "「拍攝照片」使用 Chromebook 或手機的鏡頭；「選擇照片」從裝置中選取。臉部約占畫面一半、背景單純、光線充足時，雕刻效果最清楚。"],
+    ["調整位置", "在預覽畫面上拖曳可移動照片；兩指、滑鼠滾輪或「位置」中的縮放可調整大小。切換為「照片與切割線」可確認切割範圍。"],
+    ["調整明暗", "在「明暗」中調整：臉部過暗時調高亮度，整體偏灰時調高對比；背景雜亂時可開啟「邊緣淡化」。"],
+    ["下載", "在「下載」步驟按「下載 SVG」。檔案包含照片（雕刻）與紅色切割線，交由老師以 Beam Studio 雕刻。"],
+    ["教師設定", "Beam Studio 的雕刻解析度選擇「中」（250 DPI），照片的「漸層」關閉。更換木板時，先雕刻試刻卡或 40 mm 試片，確認合適的亮度。"],
+  ];
+  function helpBody() {
+    const HELP_NOW = isL() ? HELP_L : HELP;
+    const track = h("div", { class: "cards", tabindex: "0", role: "region", "aria-label": "使用說明" },
+      ...HELP_NOW.map(([t, x], i) => h("article", { class: "hcard" }, h("span", { class: "num" }, `${i + 1} / ${HELP_NOW.length}`), h("h3", null, t), h("p", null, x))));
+    const goCard = d => track.scrollBy({ left: d * track.clientWidth, behavior: reduced() ? "auto" : "smooth" });
+    track.addEventListener("keydown", e => { if (e.key === "ArrowRight") goCard(1); if (e.key === "ArrowLeft") goCard(-1); });
+    return [
+      h("div", { class: "toc" }, ...HELP_NOW.map(([t], i) => h("button", { type: "button", class: "chip", onclick: () => track.scrollTo({ left: i * track.clientWidth, behavior: reduced() ? "auto" : "smooth" }) }, t))),
+      track,
+      h("div", { class: "row pager" }, h("button", { type: "button", class: "btn", onclick: () => goCard(-1) }, "‹ 上一則"), h("button", { type: "button", class: "btn", onclick: () => goCard(1) }, "下一則 ›")),
+      h("p", { class: "note" }, `版本 v${VERSION} 試用版`)];
+  }
+
+  const brandName = h("b"), brandSub = h("small", { class: "wide-only" });
+  root.replaceChildren(
+    h("header", { class: "top" }, h("div", { class: "top-in" },
+      h("div", { class: "brand" }, svgEl(LOGO), h("span", null, brandName, brandSub)),
+      h("button", { type: "button", class: "hbtn", onclick: () => openSheet("help") }, "使用說明"))),
+    h("main", { class: "main" }, stepNav, stepHint, s1, s2, s3));
+  document.body.append(scrim, sheetEl);
+  footSlot.replaceChildren(foot());
+  applyOut(); toolbarRedraw(); drawSteps(); go(1);
+  window.PHOTO = { O, geom, compute: G => compute(G || geom(), O.dpi), buildSVG: () => { const G = geom(); return buildSVG(G, exportCanvas(G).toDataURL("image/png")); }, testCard, VERSION, crop, openSheet, closeSheet, setOut,
+    meshStats: () => meshStats(meshNow()), stl: () => stlBuffer(meshNow()) };
+})();
+
+</script>
+</body>
+</html>
