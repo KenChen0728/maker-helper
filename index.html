@@ -344,7 +344,7 @@ textarea#textIn{font-size:1.4rem;min-height:84px;resize:vertical}
 <noscript><p style="padding:24px">這個網站需要開啟 JavaScript。</p></noscript>
 <script>
 "use strict";
-const APP_VERSION = "0.5.1";
+const APP_VERSION = "0.5.2";
 /* ===== raster: rectangular mm grids, masks, distance transforms, tracing ===== */
 /* Grid G: nx×ny cells, ppm cells per mm, W×H mm, origin at centre, y grows downward. */
 const R = (() => {
@@ -2878,6 +2878,96 @@ const ASM = (() => {
   return { build, XZ, YZ, orient, meshL };
 })();
 
+/* ===== kid-style sample drawings: wobbly finger-drawn lines (deterministic, so card images match) ===== */
+const KID = (() => {
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+  const C = (cx, cy, r, n, jit, seed) => { const R = rng(seed), p = []; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 - Math.PI / 2, rr = r * (1 + (R() - .5) * jit); p.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr]); } return p; };
+  function catmull(P, closed, step) {
+    const n = P.length, out = [], get = i => closed ? P[(i + n) % n] : P[Math.max(0, Math.min(n - 1, i))];
+    const segs = closed ? n : n - 1;
+    for (let i = 0; i < segs; i++) {
+      const p0 = get(i - 1), p1 = get(i), p2 = get(i + 1), p3 = get(i + 2);
+      const len = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]), m = Math.max(2, Math.ceil(len / step));
+      for (let k = 0; k < m; k++) { const t = k / m, t2 = t * t, t3 = t2 * t;
+        out.push([0, 1].map(j => .5 * ((2 * p1[j]) + (-p0[j] + p2[j]) * t + (2 * p0[j] - 5 * p1[j] + 4 * p2[j] - p3[j]) * t2 + (-p0[j] + 3 * p1[j] - 3 * p2[j] + p3[j]) * t3))); }
+    }
+    out.push(closed ? out[0].slice() : P[n - 1].slice()); return out;
+  }
+  function linear(P, closed, step) { const Q = closed ? P.concat([P[0]]) : P, out = [];
+    for (let i = 0; i < Q.length - 1; i++) { const a = Q[i], b = Q[i + 1], m = Math.max(2, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / step)); for (let k = 0; k < m; k++) out.push([a[0] + (b[0] - a[0]) * k / m, a[1] + (b[1] - a[1]) * k / m]); }
+    out.push(Q[Q.length - 1].slice()); return out; }
+  /* 沿著線加上手抖：低頻大擺動＋高頻小抖動；封閉的線多畫一點點，像小朋友收尾 */
+  function wobble(pts, seed, D, closed) {
+    const R = rng(seed), A1 = D * .0062, L1 = D * (.20 + R() * .12), A3 = D * .0032, L3 = D * (.085 + R() * .05), A2 = D * .0007, L2 = D * .03, f1 = R() * 6.28, f2 = R() * 6.28, f3 = R() * 6.28;
+    let s = 0; const out = [];
+    for (let i = 0; i < pts.length; i++) {
+      if (i) s += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+      const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)]; let nx = -(b[1] - a[1]), ny = b[0] - a[0]; const l = Math.hypot(nx, ny) || 1; nx /= l; ny /= l;
+      const o = A1 * Math.sin(s / L1 * 6.283 + f1) + A3 * Math.sin(s / L3 * 6.283 + f3) + A2 * Math.sin(s / L2 * 6.283 + f2);
+      out.push([pts[i][0] + nx * o, pts[i][1] + ny * o]);
+    }
+    if (closed && out.length > 8) { const k = Math.ceil(out.length * .05); for (let i = 1; i <= k; i++) { const p = out[i]; out.push([p[0] + D * .004 * i / k, p[1] + D * .003 * i / k]); } }
+    return out;
+  }
+  const S = (pts, o) => Object.assign({ pts, closed: false, smooth: true }, o || {});
+  const ray = (cx, cy, r0, r1, n, off) => { const a = []; for (let i = 0; i < n; i++) { const t = off + i / n * Math.PI * 2; a.push(S([[cx + Math.cos(t) * r0, cy + Math.sin(t) * r0], [cx + Math.cos(t) * r1, cy + Math.sin(t) * r1]], { smooth: false })); } return a; };
+  const DESIGNS = {
+    cat: { pen: 18, strokes: [
+      S([[.21,.55],[.25,.40],[.36,.31],[.50,.29],[.64,.31],[.75,.40],[.79,.55],[.74,.70],[.62,.80],[.50,.82],[.37,.80],[.26,.70]], { closed: true }),
+      S([[.28,.38],[.25,.15],[.43,.30]], { smooth: false }), S([[.57,.30],[.75,.15],[.72,.38]], { smooth: false }),
+      S(C(.40,.52,.034,7,.25,3), { closed: true }), S(C(.60,.52,.034,7,.25,5), { closed: true }),
+      S([[.47,.60],[.53,.60],[.50,.645]], { closed: true, smooth: false }),
+      S([[.43,.67],[.465,.705],[.50,.67],[.535,.705],[.57,.67]]),
+      S([[.33,.62],[.12,.585]], { smooth: false }), S([[.33,.665],[.13,.695]], { smooth: false }),
+      S([[.67,.62],[.88,.585]], { smooth: false }), S([[.67,.665],[.87,.695]], { smooth: false }) ] },
+    sun: { pen: 22, strokes: [
+      S(C(.5,.5,.21,10,.08,7), { closed: true }),
+      S(C(.43,.46,.024,6,.2,9), { closed: true }), S(C(.57,.46,.024,6,.2,11), { closed: true }),
+      S([[.40,.555],[.45,.605],[.50,.62],[.55,.605],[.60,.555]]),
+      ...ray(.5,.5,.285,.40,8,.2) ] },
+    fishsea: { pen: 14, strokes: [
+      S([[.24,.52],[.30,.42],[.42,.37],[.55,.39],[.64,.46],[.68,.52],[.64,.58],[.55,.65],[.42,.67],[.30,.62]], { closed: true }),
+      S([[.66,.52],[.80,.40],[.78,.52],[.80,.64]], { closed: true }),
+      S(C(.34,.49,.026,6,.2,13), { closed: true }), S([[.27,.56],[.31,.585],[.35,.575]]),
+      S([[.45,.385],[.50,.30],[.57,.40]]), S([[.47,.46],[.505,.52],[.47,.58]]), S([[.55,.46],[.585,.52],[.55,.58]]),
+      S(C(.20,.40,.03,6,.2,15), { closed: true }), S(C(.155,.31,.022,6,.2,17), { closed: true }), S(C(.185,.225,.016,6,.2,19), { closed: true }),
+      S([[.19,.78],[.27,.75],[.35,.78],[.43,.75],[.51,.78],[.59,.75],[.67,.78],[.75,.75],[.81,.78]]),
+      S(C(.70,.27,.055,8,.12,21), { closed: true }), ...ray(.70,.27,.085,.125,6,.3) ] },
+    turtle: { pen: 16, strokes: [
+      S([[.22,.60],[.26,.45],[.36,.35],[.50,.32],[.64,.35],[.73,.45],[.77,.60],[.62,.62],[.50,.625],[.37,.62]], { closed: true }),
+      S([[.43,.44],[.50,.40],[.57,.44],[.57,.53],[.50,.565],[.43,.53]], { closed: true, smooth: false }),
+      S([[.43,.44],[.33,.40]], { smooth: false }), S([[.57,.44],[.67,.40]], { smooth: false }), S([[.43,.53],[.30,.58]], { smooth: false }), S([[.57,.53],[.70,.58]], { smooth: false }),
+      S(C(.83,.53,.072,9,.1,23), { closed: true }), S(C(.855,.50,.014,5,.2,25), { closed: true }), S([[.815,.56],[.845,.578],[.872,.56]]),
+      S([[.63,.61],[.65,.72],[.72,.72],[.70,.61]], { closed: true }), S([[.30,.61],[.27,.72],[.34,.72],[.37,.61]], { closed: true }),
+      S([[.23,.58],[.13,.62],[.22,.635]]) ] },
+    fishmold: { pen: 18, strokes: [
+      S([[.20,.50],[.28,.38],[.42,.31],[.56,.33],[.66,.42],[.72,.48],[.84,.36],[.865,.50],[.84,.64],[.72,.52],[.66,.58],[.56,.67],[.42,.69],[.28,.62]], { closed: true }),
+      S(C(.32,.47,.03,6,.2,27), { closed: true }), S([[.24,.545],[.28,.575],[.32,.565]]) ] },
+    boat: { pen: 18, strokes: [
+      S([[.20,.64],[.82,.64],[.72,.79],[.31,.79]], { closed: true, smooth: false }),
+      S([[.50,.645],[.50,.14]], { smooth: false }),
+      S([[.50,.18],[.78,.58],[.50,.58]], { closed: true, smooth: false }),
+      S([[.50,.26],[.28,.58],[.50,.58]], { closed: true, smooth: false }),
+      S([[.50,.14],[.63,.17],[.50,.21]], { smooth: false }) ] },
+    spiral: { pen: 18, strokes: (() => { const p = []; for (let i = 0; i <= 100; i++) { const t = i / 100 * Math.PI * 4.2, r = .15 + .17 * i / 100; p.push([.5 + Math.cos(t) * r, .5 + Math.sin(t) * r]); }
+      const a = [S(p, { smooth: false })]; for (let k = 0; k < 8; k++) { const t = (k + .5) / 8 * Math.PI * 2; a.push(S(C(.5 + Math.cos(t) * .38, .5 + Math.sin(t) * .38, .026, 6, .2, 31 + k), { closed: true, fill: true })); } return a; })() },
+  };
+  function draw(name) {
+    return (c, W, H) => {
+      const d = DESIGNS[name], D = Math.min(W, H) * .9, ox = (W - D) / 2, oy = (H - D) / 2, k = Math.min(W, H) / 800;
+      c.save(); c.strokeStyle = "#000"; c.lineCap = "round"; c.lineJoin = "round"; c.lineWidth = d.pen * k;
+      d.strokes.forEach((st, i) => {
+        const P = st.pts.map(p => [ox + p[0] * D, oy + p[1] * D]);
+        const pts = wobble((st.smooth ? catmull : linear)(P, st.closed, 4), 101 + i * 17 + name.length * 7, D, st.closed);
+        c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (const q of pts.slice(1)) c.lineTo(q[0], q[1]); c.stroke();
+        if (st.fill) { c.fillStyle = "#000"; c.fill(); }
+      });
+      c.restore();
+    };
+  }
+  return { draw, DESIGNS };
+})();
+
 /* ===== product cards: presets, samples, teacher notes, thumbnails ===== */
 const CARDS = (() => {
   const S = (id, x, y, s, st, r) => ({ type: "sticker", id, x, y, s, style: st || "fill", r: r || 0 });
@@ -3061,13 +3151,13 @@ const CARDS = (() => {
   /* ---------------- 創客小幫手的作品（材料 × 作品）：材料是畫圖、打字、貼紙或照片，作品決定做成什麼 ----------------
      先用原本的引擎，設定和範例沿用舊卡片；舊卡片留在老師模式的「舊版作品」。 */
   const like = (from, o) => { const b = L.find(c => c.id === from); return Object.assign({}, b, { pin: false }, o, { work: true }); };
-  add(like("standee", { id: "stand", m: "laser", name: "立牌", kid: "畫一個圖案，自動加上插腳，插上底座就能站起來", course: "雷切：海洋動物站起來、搖搖筆架、下坡走路的騎士" }));
-  add(like("coaster", { id: "engrave", name: "雕刻圖案", kid: "把畫的圖雕刻在木頭杯墊或圓片上", course: "雷切：骨架杯墊、壓克力小夜燈、王船旗子、迷宮蓋子" }));
-  add(like("tag", { id: "charm", name: "吊飾、名牌", kid: "畫圖或打名字，做成兩種顏色的吊飾", course: "3D：名牌吊飾、喀喀按鍵的鍵帽" }));
-  add(like("stamp", { id: "stampW", name: "印章", kid: "照想蓋出來的樣子畫，網站會自動左右翻轉", course: "3D：東港印章" }));
-  add(like("clay", { id: "mold", name: "模具", kid: "畫一個外形，變成壓黏土的模具", course: "3D：魔法黏土模具" }));
-  add(like("tag", { id: "thin", name: "薄片", kid: "畫一個圖案，印成跟著外形的薄片", course: "3D：不倒翁上半身、肥皂小漁船", params: { frame: "follow", loop: false, rim: false } }));
-  add(like("top3d", { id: "spin", name: "陀螺圓盤", kid: "設計一個圓盤，插上軸就能轉", course: "3D：疊疊陀螺" }));
+  add(like("standee", { id: "stand", sample: { draw: KID.draw("boat") }, m: "laser", name: "立牌", kid: "畫一個圖案，自動加上插腳，插上底座就能站起來", course: "雷切：海洋動物站起來、搖搖筆架、下坡走路的騎士" }));
+  add(like("coaster", { id: "engrave", sample: { draw: KID.draw("fishsea") }, name: "雕刻圖案", kid: "把畫的圖雕刻在木頭杯墊或圓片上", course: "雷切：骨架杯墊、壓克力小夜燈、王船旗子、迷宮蓋子" }));
+  add(like("tag", { id: "charm", sample: { draw: KID.draw("cat") }, name: "吊飾、名牌", kid: "畫圖或打名字，做成兩種顏色的吊飾", course: "3D：名牌吊飾、喀喀按鍵的鍵帽" }));
+  add(like("stamp", { id: "stampW", sample: { draw: KID.draw("sun") }, name: "印章", kid: "照想蓋出來的樣子畫，網站會自動左右翻轉", course: "3D：東港印章" }));
+  add(like("clay", { id: "mold", sample: { draw: KID.draw("fishmold") }, name: "模具", kid: "畫一個外形，變成壓黏土的模具", course: "3D：魔法黏土模具" }));
+  add(like("tag", { id: "thin", sample: { draw: KID.draw("turtle") }, name: "薄片", kid: "畫一個圖案，印成跟著外形的薄片", course: "3D：不倒翁上半身、肥皂小漁船", params: { frame: "follow", loop: false, rim: false } }));
+  add(like("top3d", { id: "spin", sample: { draw: KID.draw("spiral") }, name: "陀螺圓盤", kid: "設計一個圓盤，插上軸就能轉", course: "3D：疊疊陀螺" }));
 
   /* ---------------- 照片（在另一個頁面：photo/） ---------------- */
   add({ id: "photoL", work: true, m: "laser", name: "照片雷雕", kid: "拍一張照片，雕刻在木頭上做成吊飾或立牌", course: "備選", href: "photo/?out=laser", teacher: { grades: "3–6 年級（初階）" } });
